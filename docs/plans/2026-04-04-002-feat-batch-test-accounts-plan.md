@@ -2,7 +2,7 @@
 date: 2026-04-05
 sequence: 002
 plan_type: feat
-status: active
+status: completed
 source_requirements:
   - D:\Code\Projects\semiauto-add\docs\brainstorms\2026-04-04-semiauto-add-requirements.md
 ---
@@ -176,7 +176,7 @@ flowchart TD
 
 ## Implementation Units
 
-### [ ] Unit 1: 新增账号列表、测试、删除的 Base Router API client
+### [x] Unit 1: 新增账号列表、测试、删除的 Base Router API client
 
 **Goal**
 
@@ -222,7 +222,7 @@ flowchart TD
 - 新增 unit test 通过
 - 不需要改现有路由即可独立消费这些 client
 
-### [ ] Unit 2: 实现批量测试编排服务
+### [x] Unit 2: 实现批量测试编排服务
 
 **Goal**
 
@@ -284,7 +284,7 @@ flowchart TD
 - 编排层 unit test 通过
 - 上层调用时不需要关心 EventStream 解析细节
 
-### [ ] Unit 3: 新增批量测试 Route Handlers
+### [x] Unit 3: 新增批量测试 Route Handlers
 
 **Goal**
 
@@ -356,7 +356,7 @@ flowchart TD
 - 所有 Route Handler integration test 通过
 - 前端可只依赖内部 API，不直接碰 Base Router 管理端点
 
-### [ ] Unit 4: 实现批量测试页签 UI、表格与删除交互
+### [x] Unit 4: 实现批量测试页签 UI、表格与删除交互
 
 **Goal**
 
@@ -434,7 +434,7 @@ flowchart TD
 - 新增组件测试通过
 - 现有 `添加账号` 相关测试不回归
 
-### [ ] Unit 5: 收尾文档与跨层 contract 回归
+### [x] Unit 5: 收尾文档与跨层 contract 回归
 
 **Goal**
 
