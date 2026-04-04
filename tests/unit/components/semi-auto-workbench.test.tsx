@@ -25,15 +25,14 @@ describe("SemiAutoWorkbench", () => {
     expect(screen.getByRole("button", { name: "添加" })).toBeDisabled();
   });
 
-  it("switches to the batch test placeholder tab", () => {
+  it("switches to the batch test tab", () => {
     render(<SemiAutoWorkbench />);
 
     fireEvent.click(screen.getByRole("tab", { name: "批量测试" }));
 
     expect(screen.getByRole("tab", { name: "批量测试", selected: true })).toBeInTheDocument();
-    expect(screen.getByLabelText("batch test placeholder")).toBeInTheDocument();
-    expect(screen.getByText("批量测试页面")).toBeInTheDocument();
-    expect(screen.queryByLabelText("邮箱")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "加载账号列表" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开始批量测试" })).toBeDisabled();
   });
 
   it("shows auth url after generating and resets when email changes", async () => {

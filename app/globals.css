@@ -132,7 +132,8 @@ button:disabled {
 }
 
 .field-block input,
-.field-block textarea {
+.field-block textarea,
+.field-block select {
   width: 100%;
   padding: 0.95rem 1rem;
   border: 1px solid rgba(29, 27, 24, 0.16);
@@ -144,7 +145,8 @@ button:disabled {
 }
 
 .field-block input:focus,
-.field-block textarea:focus {
+.field-block textarea:focus,
+.field-block select:focus {
   border-color: rgba(197, 92, 49, 0.6);
   box-shadow: 0 0 0 4px rgba(197, 92, 49, 0.14);
   transform: translateY(-1px);
@@ -314,6 +316,115 @@ button:disabled {
 .feedback.error {
   background: rgba(165, 47, 47, 0.1);
   color: var(--error);
+}
+
+.batch-toolbar,
+.batch-filter-row,
+.pagination-row,
+.table-action-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.batch-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-chip {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(29, 27, 24, 0.08);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.summary-chip span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summary-chip strong {
+  font-size: 1.2rem;
+}
+
+.batch-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(29, 27, 24, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.batch-table th,
+.batch-table td {
+  padding: 0.9rem 0.85rem;
+  border-bottom: 1px solid rgba(29, 27, 24, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.batch-table th {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.batch-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  border: 1px solid transparent;
+}
+
+.status-badge.banned {
+  background: rgba(165, 47, 47, 0.1);
+  color: var(--error);
+}
+
+.status-badge.passed {
+  background: rgba(30, 127, 84, 0.12);
+  color: var(--success);
+}
+
+.status-badge.failed {
+  background: rgba(143, 57, 23, 0.12);
+  color: var(--accent-deep);
+}
+
+.status-badge.pending,
+.status-badge.running {
+  background: rgba(29, 27, 24, 0.08);
+  color: var(--muted);
+}
+
+.status-note {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.compact {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.8rem;
 }
 
 @media (max-width: 640px) {
