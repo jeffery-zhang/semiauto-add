@@ -1,4 +1,10 @@
 import { buildAddAccountPayload } from "@/lib/shared/account-payload";
+import {
+  clearBatchTestJob,
+  createBatchTestJob,
+  getBatchTestJob,
+  removeBatchTestJobRows,
+} from "@/lib/server/batch-test/job-store";
 import { extractCodeFromCallbackUrl } from "@/lib/shared/callback-url";
 
 describe("semi-auto contract", () => {
@@ -22,5 +28,23 @@ describe("semi-auto contract", () => {
 
     expect(code).toBe("callback-123");
     expect(payload.extra.email).toBe("user@example.com");
+  });
+
+  it("keeps batch-test results keyed by job and removable by id", () => {
+    const job = createBatchTestJob([
+      { id: 1, email: "a@example.com" },
+      { id: 2, email: "b@example.com" },
+    ]);
+
+    expect(getBatchTestJob(job.jobId)?.rows).toHaveLength(2);
+
+    removeBatchTestJobRows(job.jobId, [1]);
+
+    expect(getBatchTestJob(job.jobId)?.rows).toEqual([
+      expect.objectContaining({ id: 2, email: "b@example.com" }),
+    ]);
+
+    clearBatchTestJob(job.jobId);
+    expect(getBatchTestJob(job.jobId)).toBeNull();
   });
 });

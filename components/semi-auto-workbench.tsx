@@ -274,7 +274,8 @@ export function SemiAutoWorkbench() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "生成 URL 失败");
+        const errorPayload = payload as { error?: { message?: string } };
+        throw new Error(errorPayload.error?.message ?? "生成 URL 失败");
       }
 
       setAuthContext({
@@ -307,7 +308,8 @@ export function SemiAutoWorkbench() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "获取验证码失败");
+        const errorPayload = payload as { error?: { message?: string } };
+        throw new Error(errorPayload.error?.message ?? "获取验证码失败");
       }
 
       setCodeResult(payload);
@@ -347,7 +349,7 @@ export function SemiAutoWorkbench() {
       const payload = (await response.json()) as AddResponse & { error?: { message?: string } };
 
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "添加账号失败");
+        throw new Error(payload.error?.message ?? "添加账号失败");
       }
 
       setSuccessSummary(
@@ -379,7 +381,8 @@ export function SemiAutoWorkbench() {
           | { error?: { message?: string } };
 
         if (!response.ok) {
-          throw new Error(payload?.error?.message ?? "读取批量测试状态失败");
+          const errorPayload = payload as { error?: { message?: string } };
+          throw new Error(errorPayload.error?.message ?? "读取批量测试状态失败");
         }
 
         applyBatchStatus(payload as BatchStatusPayload);
@@ -407,7 +410,8 @@ export function SemiAutoWorkbench() {
         | { error?: { message?: string } };
 
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "加载账号列表失败");
+        const errorPayload = payload as { error?: { message?: string } };
+        throw new Error(errorPayload.error?.message ?? "加载账号列表失败");
       }
 
       setBatchAccounts((payload as { accounts: BatchAccount[] }).accounts);
@@ -444,7 +448,7 @@ export function SemiAutoWorkbench() {
     const payload = (await response.json()) as { jobId?: string; error?: { message?: string } };
 
     if (!response.ok || !payload.jobId) {
-      throw new Error(payload?.error?.message ?? "启动批量测试失败");
+      throw new Error(payload.error?.message ?? "启动批量测试失败");
     }
 
     await pollBatchJob(payload.jobId);
@@ -507,7 +511,8 @@ export function SemiAutoWorkbench() {
         | { error?: { message?: string } };
 
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "删除账号失败");
+        const errorPayload = payload as { error?: { message?: string } };
+        throw new Error(errorPayload.error?.message ?? "删除账号失败");
       }
 
       const { deletedIds, failed } = payload as {

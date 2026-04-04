@@ -6,7 +6,7 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(screen.getByLabelText("semi-auto workbench")).toBeInTheDocument();
-    expect(screen.getByLabelText("邮箱")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "生成 URL" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "添加账号", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "批量测试", selected: false })).toBeInTheDocument();
   });
 });
