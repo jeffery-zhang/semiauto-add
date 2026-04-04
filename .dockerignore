@@ -1,0 +1,11 @@
+.git
+.next
+node_modules
+npm-debug.log*
+.env
+.next-dev.log
+.next-dev.err.log
+.artifacts-*.png
+coverage
+docs
+tests
