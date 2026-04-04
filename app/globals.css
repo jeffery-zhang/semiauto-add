@@ -54,7 +54,7 @@ button:disabled {
 .workbench-shell {
   display: grid;
   gap: 2rem;
-  width: min(900px, calc(100vw - 2rem));
+  width: min(1480px, calc(100vw - 2rem));
   margin: 0 auto;
   padding: 2rem 0 4rem;
 }
@@ -364,7 +364,7 @@ button:disabled {
 .batch-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 1180px;
 }
 
 .batch-table th,
@@ -373,6 +373,7 @@ button:disabled {
   border-bottom: 1px solid rgba(29, 27, 24, 0.08);
   text-align: left;
   vertical-align: top;
+  white-space: nowrap;
 }
 
 .batch-table th {
@@ -416,10 +417,11 @@ button:disabled {
 }
 
 .status-note {
-  display: block;
-  margin-top: 0.4rem;
+  display: inline-block;
+  margin-left: 0.5rem;
   color: var(--muted);
   font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .compact {
@@ -427,9 +429,26 @@ button:disabled {
   padding: 0.45rem 0.8rem;
 }
 
+.icon-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 27, 24, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--accent-deep);
+}
+
+.icon-action-button.danger {
+  color: var(--error);
+  border-color: rgba(165, 47, 47, 0.18);
+}
+
 @media (max-width: 640px) {
   .workbench-shell {
-    width: min(100vw - 1rem, 900px);
+    width: min(100vw - 1rem, 1480px);
     padding: 1rem 0 2rem;
   }
 

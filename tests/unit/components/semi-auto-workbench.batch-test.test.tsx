@@ -95,6 +95,63 @@ describe("SemiAutoWorkbench batch-test tab", () => {
     expect(screen.queryByText("user-3@example.com")).not.toBeInTheDocument();
   });
 
+  it("supports switching page size", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            accounts: Array.from({ length: 11 }, (_, index) => ({
+              id: index + 1,
+              email: `user-${index + 1}@example.com`,
+            })),
+            totalCount: 11,
+            totalPages: 1,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ jobId: "job-123" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            jobId: "job-123",
+            status: "completed",
+            current: 11,
+            total: 11,
+            banned: 0,
+            failed: 0,
+            passed: 11,
+            rows: Array.from({ length: 11 }, (_, index) => ({
+              id: index + 1,
+              email: `user-${index + 1}@example.com`,
+              status: "passed",
+              lastError: null,
+              lastTestedAt: "2026-04-05T12:00:00.000Z",
+            })),
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      );
+
+    openBatchTestTab();
+    fireEvent.click(screen.getByRole("button", { name: "加载账号列表" }));
+    await screen.findByText("已加载 11 个账号");
+
+    fireEvent.click(screen.getByRole("button", { name: "开始批量测试" }));
+    expect(await screen.findByText("第 1 / 2 页")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("每页条数"), {
+      target: { value: "20" },
+    });
+
+    expect(await screen.findByText("第 1 / 1 页")).toBeInTheDocument();
+  });
+
   it("deletes selected rows and clears stored batch data", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(
@@ -165,5 +222,58 @@ describe("SemiAutoWorkbench batch-test tab", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "清除批量测试数据" }));
     expect(await screen.findByText("已清除当前批量测试数据")).toBeInTheDocument();
+  });
+
+  it("renders icon action buttons with labels", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            accounts: [{ id: 1, email: "a@example.com" }],
+            totalCount: 1,
+            totalPages: 1,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ jobId: "job-123" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            jobId: "job-123",
+            status: "completed",
+            current: 1,
+            total: 1,
+            banned: 1,
+            failed: 0,
+            passed: 0,
+            rows: [
+              {
+                id: 1,
+                email: "a@example.com",
+                status: "banned",
+                lastError: null,
+                lastTestedAt: "2026-04-05T12:00:00.000Z",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      );
+
+    openBatchTestTab();
+    fireEvent.click(screen.getByRole("button", { name: "加载账号列表" }));
+    await screen.findByText("已加载 1 个账号");
+
+    fireEvent.click(screen.getByRole("button", { name: "开始批量测试" }));
+    await screen.findByText("a@example.com");
+
+    expect(screen.getByRole("button", { name: "测试账号 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "删除账号 1" })).toBeInTheDocument();
   });
 });

@@ -74,6 +74,48 @@ function CopyIcon() {
   );
 }
 
+function TestIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="copy-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 4h8" />
+      <path d="M9 2h6l1 2h3a1 1 0 0 1 1 1v2H4V5a1 1 0 0 1 1-1h3l1-2Z" />
+      <path d="M6 8h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8Z" />
+      <path d="M10 12h4" />
+      <path d="M10 16h4" />
+    </svg>
+  );
+}
+
+function DeleteIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="copy-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+      <path d="M6 6l1 14a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9L18 6" />
+      <path d="M10 10v6" />
+      <path d="M14 10v6" />
+    </svg>
+  );
+}
+
 function statusLabel(status: BatchStatus) {
   switch (status) {
     case "banned":
@@ -122,13 +164,12 @@ export function SemiAutoWorkbench() {
   const [bannedCount, setBannedCount] = useState(0);
   const [statusFilter, setStatusFilter] = useState<BatchFilter>("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const [isRunningBatchTest, setIsRunningBatchTest] = useState(false);
   const [isDeletingBatch, setIsDeletingBatch] = useState(false);
   const [batchFeedback, setBatchFeedback] = useState<ActionFeedback | null>(null);
-
-  const pageSize = 10;
 
   useEffect(() => {
     const storedState = readWorkbenchState();
@@ -157,7 +198,7 @@ export function SemiAutoWorkbench() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter]);
+  }, [statusFilter, pageSize]);
 
   const canAdd = useMemo(
     () => Boolean(authContext && callbackUrl.trim()) && !isAdding,
@@ -871,6 +912,18 @@ export function SemiAutoWorkbench() {
                   <option value="failed">测试失败</option>
                 </select>
               </label>
+              <label className="field-block" htmlFor="page-size">
+                <span className="field-label">每页条数</span>
+                <select
+                  id="page-size"
+                  value={String(pageSize)}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                >
+                  <option value="10">10 / 页</option>
+                  <option value="20">20 / 页</option>
+                  <option value="50">50 / 页</option>
+                </select>
+              </label>
             </div>
 
             <div className="feedback-stack" aria-live="polite">
@@ -926,19 +979,23 @@ export function SemiAutoWorkbench() {
                             <div className="table-action-row">
                               <button
                                 type="button"
-                                className="secondary-button compact"
+                                className="icon-action-button"
+                                aria-label={`测试账号 ${row.id}`}
+                                title="测试"
                                 onClick={() => handleRetest(row.id)}
                                 disabled={isRunningBatchTest}
                               >
-                                测试
+                                <TestIcon />
                               </button>
                               <button
                                 type="button"
-                                className="ghost-button compact"
+                                className="icon-action-button danger"
+                                aria-label={`删除账号 ${row.id}`}
+                                title="删除"
                                 onClick={() => handleDelete([row.id])}
                                 disabled={isDeletingBatch}
                               >
-                                删除
+                                <DeleteIcon />
                               </button>
                             </div>
                           </td>
