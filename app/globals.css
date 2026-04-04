@@ -1,0 +1,334 @@
+:root {
+  --bg: #f4efe5;
+  --panel: rgba(255, 250, 240, 0.88);
+  --panel-strong: rgba(255, 250, 240, 0.96);
+  --text: #1d1b18;
+  --muted: #665f54;
+  --line: rgba(43, 39, 33, 0.14);
+  --accent: #c55c31;
+  --accent-deep: #8f3917;
+  --success: #1e7f54;
+  --error: #a52f2f;
+  --shadow: 0 20px 60px rgba(37, 26, 15, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(197, 92, 49, 0.16), transparent 35%),
+    linear-gradient(180deg, #f7f2e9 0%, #efe5d6 100%);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-sans), sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(143, 57, 23, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 22%);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.workbench-shell {
+  display: grid;
+  gap: 2rem;
+  width: min(900px, calc(100vw - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.hero-panel,
+.workbench-panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.hero-panel {
+  padding: 2rem 2rem 1.5rem;
+  border-radius: 28px;
+}
+
+.hero-panel h1 {
+  margin: 0;
+  font-family: var(--font-serif), serif;
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
+  line-height: 0.94;
+}
+
+.eyebrow,
+.section-label,
+.field-label {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.lede {
+  margin: 1rem 0 0;
+  max-width: 42rem;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.workbench-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 32px;
+}
+
+.tab-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tab-button {
+  min-height: 2.9rem;
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 27, 24, 0.12);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--muted);
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: #fff8f2;
+  box-shadow: 0 12px 28px rgba(143, 57, 23, 0.18);
+}
+
+.field-block {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-block input,
+.field-block textarea {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(29, 27, 24, 0.16);
+  border-radius: 16px;
+  background: var(--panel-strong);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.field-block input:focus,
+.field-block textarea:focus {
+  border-color: rgba(197, 92, 49, 0.6);
+  box-shadow: 0 0 0 4px rgba(197, 92, 49, 0.14);
+  transform: translateY(-1px);
+}
+
+.input-with-action {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.input-with-action input {
+  flex: 1 1 auto;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  min-height: 3rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.primary-button:hover:not(:disabled),
+.secondary-button:hover:not(:disabled),
+.ghost-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  padding: 0.85rem 1.25rem;
+  color: #fff8f2;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  box-shadow: 0 12px 28px rgba(143, 57, 23, 0.22);
+}
+
+.secondary-button {
+  padding: 0.75rem 1.1rem;
+  background: #fff8f1;
+  border-color: rgba(197, 92, 49, 0.25);
+}
+
+.ghost-button {
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border-color: rgba(29, 27, 24, 0.12);
+}
+
+.result-panel,
+.success-panel,
+.placeholder-panel {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(29, 27, 24, 0.1);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.placeholder-panel h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.placeholder-panel p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.result-panel a {
+  word-break: break-all;
+  color: var(--accent-deep);
+  flex: 1 1 auto;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.code-chip {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  font-size: 1.25rem;
+  letter-spacing: 0.16em;
+  background: rgba(30, 127, 84, 0.12);
+  color: var(--success);
+}
+
+.text-chip {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(197, 92, 49, 0.12);
+  color: var(--accent-deep);
+}
+
+.copy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.copy-row-stretch {
+  align-items: flex-start;
+}
+
+.copy-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 27, 24, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--accent-deep);
+  flex: 0 0 auto;
+}
+
+.copy-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.meta-grid dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.meta-grid dd {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+}
+
+.feedback-stack {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.feedback {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+}
+
+.feedback.success {
+  background: rgba(30, 127, 84, 0.12);
+  color: var(--success);
+}
+
+.feedback.error {
+  background: rgba(165, 47, 47, 0.1);
+  color: var(--error);
+}
+
+@media (max-width: 640px) {
+  .workbench-shell {
+    width: min(100vw - 1rem, 900px);
+    padding: 1rem 0 2rem;
+  }
+
+  .hero-panel,
+  .workbench-panel {
+    border-radius: 24px;
+  }
+
+  .hero-panel,
+  .workbench-panel {
+    padding-inline: 1rem;
+  }
+}
