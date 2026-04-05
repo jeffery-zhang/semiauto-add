@@ -17,7 +17,7 @@ function isProtectedApiPath(pathname: string) {
   return pathname.startsWith("/api/") && !AUTH_API_PATHS.has(pathname);
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = await getAuthSession(request);
 

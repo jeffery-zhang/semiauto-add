@@ -49,4 +49,20 @@ describe("auth cookie helpers", () => {
 
     await expect(verifyAuthCookieValue(config, cookieValue)).resolves.toBeNull();
   });
+
+  it("verifies a cookie value after browser-style re-encoding", async () => {
+    const cookieValue = await createAuthCookieValue(
+      { authCookieSecret: config.authCookieSecret },
+      {
+        username: "admin",
+        issuedAt: Date.now(),
+      },
+    );
+
+    await expect(
+      verifyAuthCookieValue(config, encodeURIComponent(cookieValue)),
+    ).resolves.toMatchObject({
+      username: "admin",
+    });
+  });
 });

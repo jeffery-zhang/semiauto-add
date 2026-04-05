@@ -14,7 +14,7 @@ import {
   AUTH_COOKIE_NAME,
   createAuthCookieValue,
 } from "@/lib/server/auth/cookie";
-import { middleware } from "@/middleware";
+import { proxy } from "@/proxy";
 
 describe("auth protection", () => {
   beforeEach(() => {
@@ -48,7 +48,7 @@ describe("auth protection", () => {
   });
 
   it("redirects unauthenticated page requests to /login", async () => {
-    const response = await middleware(new NextRequest("http://localhost/"));
+    const response = await proxy(new NextRequest("http://localhost/"));
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost/login");
@@ -61,14 +61,14 @@ describe("auth protection", () => {
     );
     const request = new NextRequest("http://localhost/");
     request.cookies.set(AUTH_COOKIE_NAME, cookieValue);
-    const response = await middleware(request);
+    const response = await proxy(request);
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
   it("returns 401 for unauthenticated API access", async () => {
-    const response = await middleware(
+    const response = await proxy(
       new NextRequest("http://localhost/api/code", { method: "POST" }),
     );
     const payload = await response.json();
@@ -78,7 +78,7 @@ describe("auth protection", () => {
   });
 
   it("lets the login route pass through middleware", async () => {
-    const response = await middleware(
+    const response = await proxy(
       new NextRequest("http://localhost/login"),
     );
 

@@ -14,9 +14,18 @@ function encodePayload(payload: AuthCookiePayload) {
   return encodeURIComponent(JSON.stringify(payload));
 }
 
+function normalizeEncodedPayload(value: string) {
+  if (value.startsWith("%25")) {
+    return decodeURIComponent(value);
+  }
+
+  return value;
+}
+
 function decodePayload(value: string) {
   try {
-    const parsed = JSON.parse(decodeURIComponent(value)) as Partial<AuthCookiePayload>;
+    const decodedValue = decodeURIComponent(normalizeEncodedPayload(value));
+    const parsed = JSON.parse(decodedValue) as Partial<AuthCookiePayload>;
     const issuedAt = parsed.issuedAt;
 
     if (typeof parsed.username !== "string" || typeof issuedAt !== "number" || !Number.isFinite(issuedAt)) {
@@ -76,12 +85,13 @@ export async function verifyAuthCookieValue(
   const encodedPayload = cookieValue.slice(0, separatorIndex);
   const signature = cookieValue.slice(separatorIndex + 1);
   const payload = decodePayload(encodedPayload);
+  const signaturePayload = normalizeEncodedPayload(encodedPayload);
 
   if (!payload || !signature || payload.username !== config.authUsername) {
     return null;
   }
 
-  const expectedSignature = await buildSignature(config.authCookieSecret, encodedPayload);
+  const expectedSignature = await buildSignature(config.authCookieSecret, signaturePayload);
 
   if (signature !== expectedSignature || isExpired(payload.issuedAt)) {
     return null;
