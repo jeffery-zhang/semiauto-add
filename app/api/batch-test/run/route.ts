@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createUnauthorizedResponse,
+  isUnauthorizedError,
+  requireAuthenticatedRequest,
+} from "@/lib/server/auth/guard";
 import { ensureAdminTokenReady } from "@/lib/server/base-router/admin-token";
 import { loadRuntimeConfig } from "@/lib/server/config";
 import { toSafeErrorMessage } from "@/lib/server/errors";
@@ -21,6 +26,7 @@ function resolveAccountsFromExistingJob(jobId: string | undefined, accountIds: n
 
 export async function POST(request: Request) {
   try {
+    await requireAuthenticatedRequest(request);
     const payload = (await request.json()) as {
       accountIds?: number[];
       jobId?: string;
@@ -62,6 +68,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return createUnauthorizedResponse(error.message);
+    }
+
     return NextResponse.json(
       { error: { message: toSafeErrorMessage(error) } },
       { status: 500 },

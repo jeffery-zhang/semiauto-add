@@ -1,8 +1,11 @@
-import { loadRuntimeConfig } from "@/lib/server/config";
+import { loadAuthConfig, loadRuntimeConfig } from "@/lib/server/config";
 
 describe("loadRuntimeConfig", () => {
   it("reads required environment values", () => {
     const config = loadRuntimeConfig({
+      AUTH_USERNAME: "admin",
+      AUTH_PASSWORD: "password",
+      AUTH_COOKIE_SECRET: "cookie-secret",
       BASE_ROUTER_HOST: "https://router.example.com",
       BASE_ROUTER_ADMIN_EMAIL: "admin@example.com",
       BASE_ROUTER_ADMIN_PASSWORD: "secret",
@@ -18,13 +21,39 @@ describe("loadRuntimeConfig", () => {
     expect(config.baseRouterHost).toBe("https://router.example.com");
     expect(config.localProxy).toBe("http://127.0.0.1:7890");
     expect(config.adminToken).toBe("");
+    expect(config.authUsername).toBe("admin");
   });
 
   it("throws a clear error when a required value is missing", () => {
     expect(() =>
       loadRuntimeConfig({
+        AUTH_USERNAME: "admin",
+        AUTH_PASSWORD: "password",
+        AUTH_COOKIE_SECRET: "cookie-secret",
         BASE_ROUTER_HOST: "https://router.example.com",
       }),
     ).toThrow(/BASE_ROUTER_ADMIN_EMAIL/);
+  });
+});
+
+describe("loadAuthConfig", () => {
+  it("reads auth environment values", () => {
+    const config = loadAuthConfig({
+      AUTH_USERNAME: "admin",
+      AUTH_PASSWORD: "password",
+      AUTH_COOKIE_SECRET: "cookie-secret",
+    });
+
+    expect(config.authUsername).toBe("admin");
+    expect(config.authPassword).toBe("password");
+    expect(config.authCookieSecret).toBe("cookie-secret");
+  });
+
+  it("throws a clear error when auth config is missing", () => {
+    expect(() =>
+      loadAuthConfig({
+        AUTH_USERNAME: "admin",
+      }),
+    ).toThrow(/AUTH_PASSWORD/);
   });
 });

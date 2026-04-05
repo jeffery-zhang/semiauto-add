@@ -1,4 +1,10 @@
-export interface RuntimeConfig {
+export interface AuthConfig {
+  authUsername: string;
+  authPassword: string;
+  authCookieSecret: string;
+}
+
+export interface RuntimeConfig extends AuthConfig {
   baseRouterHost: string;
   baseRouterAdminEmail: string;
   baseRouterAdminPassword: string;
@@ -27,8 +33,29 @@ function requireEnvValue(name: string, value: string | undefined, message: strin
   return normalized;
 }
 
+export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig {
+  return {
+    authUsername: requireEnvValue(
+      "AUTH_USERNAME",
+      env.AUTH_USERNAME,
+      "缺少 AUTH_USERNAME，请先在 .env 中配置登录用户名",
+    ),
+    authPassword: requireEnvValue(
+      "AUTH_PASSWORD",
+      env.AUTH_PASSWORD,
+      "缺少 AUTH_PASSWORD，请先在 .env 中配置登录密码",
+    ),
+    authCookieSecret: requireEnvValue(
+      "AUTH_COOKIE_SECRET",
+      env.AUTH_COOKIE_SECRET,
+      "缺少 AUTH_COOKIE_SECRET，请先在 .env 中配置登录 cookie 密钥",
+    ),
+  };
+}
+
 export function loadRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {
   return {
+    ...loadAuthConfig(env),
     baseRouterHost: requireEnvValue(
       "BASE_ROUTER_HOST",
       env.BASE_ROUTER_HOST,

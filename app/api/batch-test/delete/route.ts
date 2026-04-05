@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createUnauthorizedResponse,
+  isUnauthorizedError,
+  requireAuthenticatedRequest,
+} from "@/lib/server/auth/guard";
 import { ensureAdminTokenReady } from "@/lib/server/base-router/admin-token";
 import { requestDeleteAccount } from "@/lib/server/base-router/accounts";
 import { removeBatchTestJobRows } from "@/lib/server/batch-test/job-store";
@@ -7,6 +12,7 @@ import { toSafeErrorMessage } from "@/lib/server/errors";
 
 export async function POST(request: Request) {
   try {
+    await requireAuthenticatedRequest(request);
     const payload = (await request.json()) as {
       jobId?: string;
       accountIds?: number[];
@@ -47,6 +53,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ deletedIds, failed });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return createUnauthorizedResponse(error.message);
+    }
+
     return NextResponse.json(
       { error: { message: toSafeErrorMessage(error) } },
       { status: 500 },

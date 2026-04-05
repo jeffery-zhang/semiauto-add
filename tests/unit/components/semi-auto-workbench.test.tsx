@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useRouter } from "next/navigation";
 import { SemiAutoWorkbench } from "@/components/semi-auto-workbench";
 import * as profileData from "@/lib/shared/profile-data";
 
@@ -6,6 +7,7 @@ describe("SemiAutoWorkbench", () => {
   beforeEach(() => {
     sessionStorage.clear();
     vi.restoreAllMocks();
+    vi.stubGlobal("fetch", vi.fn());
     Object.assign(navigator, {
       clipboard: {
         writeText: vi.fn().mockResolvedValue(undefined),
@@ -16,6 +18,7 @@ describe("SemiAutoWorkbench", () => {
   it("hides the generated url section before generation", () => {
     render(<SemiAutoWorkbench />);
 
+    expect(screen.getByRole("button", { name: "退出登录" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "添加账号", selected: true })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "批量测试", selected: false })).toBeInTheDocument();
     expect(screen.queryByLabelText("generated auth url")).not.toBeInTheDocument();
@@ -37,18 +40,15 @@ describe("SemiAutoWorkbench", () => {
 
   it("shows auth url after generating and resets when email changes", async () => {
     vi.spyOn(profileData, "buildRandomProfileName").mockReturnValue("James Lucas Rowan");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            email: "user@example.com",
-            authUrl: "https://auth.example.com",
-            sessionId: "session-123",
-            state: "state-123",
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        ),
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          email: "user@example.com",
+          authUrl: "https://auth.example.com",
+          sessionId: "session-123",
+          state: "state-123",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
       ),
     );
 
@@ -77,10 +77,8 @@ describe("SemiAutoWorkbench", () => {
 
   it("fetches code and keeps success summary after add succeeds", async () => {
     vi.spyOn(profileData, "buildRandomProfileName").mockReturnValue("James Lucas Rowan");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn()
-        .mockResolvedValueOnce(
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
           new Response(
             JSON.stringify({
               email: "user@example.com",
@@ -91,7 +89,7 @@ describe("SemiAutoWorkbench", () => {
             { status: 200, headers: { "content-type": "application/json" } },
           ),
         )
-        .mockResolvedValueOnce(
+      .mockResolvedValueOnce(
           new Response(
             JSON.stringify({
               code: "654321",
@@ -103,7 +101,7 @@ describe("SemiAutoWorkbench", () => {
             { status: 200, headers: { "content-type": "application/json" } },
           ),
         )
-        .mockResolvedValueOnce(
+      .mockResolvedValueOnce(
           new Response(
             JSON.stringify({
               email: "user@example.com",
@@ -117,8 +115,7 @@ describe("SemiAutoWorkbench", () => {
             }),
             { status: 200, headers: { "content-type": "application/json" } },
           ),
-        ),
-    );
+        );
 
     render(<SemiAutoWorkbench />);
 
@@ -174,5 +171,63 @@ describe("SemiAutoWorkbench", () => {
     expect(screen.getByText("James Lucas Rowan")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "复制授权 URL" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "复制随机姓名" })).toBeInTheDocument();
+  });
+
+  it("redirects to the login page when a request returns 401", async () => {
+    const router = useRouter();
+    sessionStorage.setItem(
+      "semiauto-add/session",
+      JSON.stringify({
+        authContext: {
+          email: "user@example.com",
+          authUrl: "https://auth.example.com",
+          sessionId: "session-123",
+          state: "state-123",
+          generatedName: "James Lucas Rowan",
+        },
+        successSummary: null,
+      }),
+    );
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          error: {
+            message: "未授权访问，请先登录",
+          },
+        }),
+        {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
+
+    render(<SemiAutoWorkbench />);
+
+    fireEvent.click(screen.getByRole("button", { name: "获取 code" }));
+
+    await waitFor(() => {
+      expect(router.replace).toHaveBeenCalledWith("/login");
+    });
+    expect(sessionStorage.getItem("semiauto-add/session")).toBeNull();
+  });
+
+  it("calls logout and redirects back to the login page", async () => {
+    const router = useRouter();
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    render(<SemiAutoWorkbench />);
+
+    fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
+      expect(router.replace).toHaveBeenCalledWith("/login");
+    });
   });
 });

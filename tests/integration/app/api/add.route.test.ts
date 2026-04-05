@@ -1,3 +1,13 @@
+vi.mock("@/lib/server/auth/guard", () => ({
+  requireAuthenticatedRequest: vi.fn().mockResolvedValue({
+    username: "admin",
+    issuedAt: Date.now(),
+  }),
+  isUnauthorizedError: vi.fn(() => false),
+  createUnauthorizedResponse: vi.fn((message = "未授权访问，请先登录") =>
+    Response.json({ error: { message } }, { status: 401 }),
+  ),
+}));
 vi.mock("@/lib/server/config", () => ({
   loadRuntimeConfig: vi.fn(() => ({ mocked: true })),
 }));

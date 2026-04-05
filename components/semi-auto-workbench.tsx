@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   clearWorkbenchState,
   readWorkbenchState,
@@ -138,6 +139,7 @@ function sleep(delayMs: number) {
 }
 
 export function SemiAutoWorkbench() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("add-account");
   const [email, setEmail] = useState("");
   const [authContext, setAuthContext] = useState<AuthSessionContext | null>(null);
@@ -169,7 +171,9 @@ export function SemiAutoWorkbench() {
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const [isRunningBatchTest, setIsRunningBatchTest] = useState(false);
   const [isDeletingBatch, setIsDeletingBatch] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [batchFeedback, setBatchFeedback] = useState<ActionFeedback | null>(null);
+  const [sessionFeedback, setSessionFeedback] = useState<ActionFeedback | null>(null);
 
   useEffect(() => {
     const storedState = readWorkbenchState();
@@ -224,7 +228,7 @@ export function SemiAutoWorkbench() {
   const paginatedRows = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredRows.slice(start, start + pageSize);
-  }, [filteredRows, page]);
+  }, [filteredRows, page, pageSize]);
 
   const visibleRowIds = paginatedRows.map((row) => row.id);
   const allVisibleSelected =
@@ -305,7 +309,7 @@ export function SemiAutoWorkbench() {
     setAddFeedback(null);
 
     try {
-      const response = await fetch("/api/auth-url", {
+      const response = await fetchWithAuth("/api/auth-url", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -345,7 +349,7 @@ export function SemiAutoWorkbench() {
     setCodeFeedback(null);
 
     try {
-      const response = await fetch("/api/code", { method: "POST" });
+      const response = await fetchWithAuth("/api/code", { method: "POST" });
       const payload = await response.json();
 
       if (!response.ok) {
@@ -375,7 +379,7 @@ export function SemiAutoWorkbench() {
     setAddFeedback(null);
 
     try {
-      const response = await fetch("/api/add", {
+      const response = await fetchWithAuth("/api/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -416,7 +420,7 @@ export function SemiAutoWorkbench() {
 
     try {
       for (;;) {
-        const response = await fetch(`/api/batch-test/status/${jobId}`);
+        const response = await fetchWithAuth(`/api/batch-test/status/${jobId}`);
         const payload = (await response.json()) as
           | BatchStatusPayload
           | { error?: { message?: string } };
@@ -445,7 +449,7 @@ export function SemiAutoWorkbench() {
     setBatchFeedback(null);
 
     try {
-      const response = await fetch("/api/batch-test/accounts", { method: "POST" });
+      const response = await fetchWithAuth("/api/batch-test/accounts", { method: "POST" });
       const payload = (await response.json()) as
         | { accounts: BatchAccount[]; totalCount: number }
         | { error?: { message?: string } };
@@ -479,7 +483,7 @@ export function SemiAutoWorkbench() {
 
     setBatchFeedback(null);
 
-    const response = await fetch("/api/batch-test/run", {
+    const response = await fetchWithAuth("/api/batch-test/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -537,7 +541,7 @@ export function SemiAutoWorkbench() {
     setIsDeletingBatch(true);
 
     try {
-      const response = await fetch("/api/batch-test/delete", {
+      const response = await fetchWithAuth("/api/batch-test/delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -587,14 +591,18 @@ export function SemiAutoWorkbench() {
   async function handleClearBatchData() {
     if (batchJobId) {
       try {
-        await fetch("/api/batch-test/clear", {
+        await fetchWithAuth("/api/batch-test/clear", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ jobId: batchJobId }),
         });
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.message === "登录态已失效，请重新登录") {
+          return;
+        }
+
         // 清理失败也允许前端先清空本地状态
       }
     }
@@ -622,9 +630,78 @@ export function SemiAutoWorkbench() {
     setSelectedIds((currentIds) => Array.from(new Set([...currentIds, ...visibleRowIds])));
   }
 
+  function redirectToLogin() {
+    clearWorkbenchState();
+    setAuthContext(null);
+    setSuccessSummary(null);
+    startTransition(() => {
+      router.replace("/login");
+    });
+  }
+
+  async function fetchWithAuth(input: string, init?: RequestInit) {
+    const response = await fetch(input, init);
+
+    if (response.status === 401) {
+      redirectToLogin();
+      throw new Error("登录态已失效，请重新登录");
+    }
+
+    return response;
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    setSessionFeedback(null);
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      const payload = (await response.json()) as { error?: { message?: string } };
+
+      if (!response.ok) {
+        throw new Error(payload.error?.message ?? "退出失败");
+      }
+
+      redirectToLogin();
+    } catch (error) {
+      setSessionFeedback({
+        kind: "error",
+        message: error instanceof Error ? error.message : "退出失败",
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
   return (
     <main className="workbench-shell">
       <section className="workbench-panel" aria-label="semi-auto workbench">
+        <div className="panel-header">
+          <div className="panel-heading">
+            <p className="eyebrow">Authenticated Session</p>
+            <h1 className="panel-title">semiauto-add</h1>
+            <p className="panel-subtitle">共享凭据已通过校验，可以继续使用现有工作台。</p>
+          </div>
+          <div className="panel-actions">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? "退出中..." : "退出登录"}
+            </button>
+          </div>
+        </div>
+
+        <div className="feedback-stack" aria-live="polite">
+          {sessionFeedback ? (
+            <p className={`feedback ${sessionFeedback.kind}`}>{sessionFeedback.message}</p>
+          ) : null}
+        </div>
+
         <div className="tab-row" role="tablist" aria-label="workbench tabs">
           <button
             type="button"

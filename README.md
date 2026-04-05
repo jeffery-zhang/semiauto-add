@@ -29,6 +29,13 @@
 - 不自动填写表单
 - 不自动抓 localhost 回调
 
+## 登录门
+
+- 站点默认先显示共享账号密码登录页
+- 登录成功后通过 cookie 保持登录态，并进入工作台首页
+- 顶部提供退出按钮；退出后会立即清掉登录态并回到登录页
+- 如果登录态失效，前端请求收到 `401` 后会回到登录页
+
 ## 环境要求
 
 - Node.js 20+
@@ -53,12 +60,21 @@ AUTH_URL=
 LOGIN_URL=
 EXCHANGE_CODE_URL=
 ADD_ACCOUNT_URL=
+AUTH_USERNAME=
+AUTH_PASSWORD=
+AUTH_COOKIE_SECRET=
 ADMIN_TOKEN=
 TEMP_EMAIL_ADMIN_PWD=
 LOCAL_PROXY=
 ```
 
 这些变量沿用 `auto-add` 的后端接口命名，不重新发明新名字。
+
+新增的 3 个登录门变量分别负责：
+
+- `AUTH_USERNAME`: 共享登录用户名
+- `AUTH_PASSWORD`: 共享登录密码
+- `AUTH_COOKIE_SECRET`: 服务端签名 cookie 使用的密钥
 
 ## 启动
 
@@ -70,6 +86,12 @@ npm run dev
 
 ```text
 http://localhost:3000
+```
+
+未登录时会先进入：
+
+```text
+http://localhost:3000/login
 ```
 
 ## 页面操作顺序
@@ -107,6 +129,8 @@ npm run build
 
 - 授权上下文保存在浏览器 `sessionStorage`
 - 页面提供“清除当前 session”能力
+- 页面提供显式退出能力
 - 重新生成 URL 或修改邮箱时，会清空旧上下文和旧结果
 - 服务端不会把管理员 token、temp-email 管理密码或完整 callback code 透传到前端
+- 服务端不会把共享登录密码或 cookie 签名密钥暴露到前端
 - 批量测试结果默认保留在当前服务生命周期内，直到用户主动清理

@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createUnauthorizedResponse,
+  isUnauthorizedError,
+  requireAuthenticatedRequest,
+} from "@/lib/server/auth/guard";
 import { ensureAdminTokenReady } from "@/lib/server/base-router/admin-token";
 import {
   extractAuthUrl,
@@ -11,6 +16,7 @@ import { toSafeErrorMessage } from "@/lib/server/errors";
 
 export async function POST(request: Request) {
   try {
+    await requireAuthenticatedRequest(request);
     const payload = (await request.json()) as { email?: string };
     const email = String(payload?.email ?? "").trim();
 
@@ -35,6 +41,10 @@ export async function POST(request: Request) {
       state,
     });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return createUnauthorizedResponse(error.message);
+    }
+
     return NextResponse.json(
       { error: { message: toSafeErrorMessage(error) } },
       { status: 500 },

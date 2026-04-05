@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createUnauthorizedResponse,
+  isUnauthorizedError,
+  requireAuthenticatedRequest,
+} from "@/lib/server/auth/guard";
 import { requestAddAccount } from "@/lib/server/base-router/add-account";
 import { ensureAdminTokenReady } from "@/lib/server/base-router/admin-token";
 import { requestExchangeCode } from "@/lib/server/base-router/exchange-code";
@@ -35,6 +40,7 @@ function extractAccountStatus(result: Record<string, unknown>) {
 
 export async function POST(request: Request) {
   try {
+    await requireAuthenticatedRequest(request);
     const payload = (await request.json()) as {
       email?: string;
       sessionId?: string;
@@ -83,6 +89,10 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return createUnauthorizedResponse(error.message);
+    }
+
     const message = toSafeErrorMessage(error);
     const isValidationError =
       message.includes("回调 URL 必须以") || message.includes("回调 URL 中缺少 code 参数");
