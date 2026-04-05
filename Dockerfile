@@ -19,7 +19,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+ENV PORT=9999
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
@@ -32,6 +32,6 @@ COPY --from=builder /app/next-env.d.ts ./next-env.d.ts
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-EXPOSE 3000
+EXPOSE 9999
 
-CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "9999"]
