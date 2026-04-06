@@ -1,8 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SemiAutoWorkbench } from "@/components/semi-auto-workbench";
 
+const TEST_TEMP_EMAIL_ADDRESSES = ["temp-1@example.com", "temp-2@example.com"];
+
 function openBatchTestTab() {
-  render(<SemiAutoWorkbench />);
+  render(<SemiAutoWorkbench tempEmailAddresses={TEST_TEMP_EMAIL_ADDRESSES} />);
   fireEvent.click(screen.getByRole("tab", { name: "批量测试" }));
 }
 

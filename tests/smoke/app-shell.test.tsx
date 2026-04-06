@@ -1,6 +1,15 @@
 import { render, screen } from "@testing-library/react";
+import { describe, it, vi } from "vitest";
 import HomePage from "@/app/page";
 import LoginPage from "@/app/login/page";
+
+const MOCK_TEMP_EMAIL_ADDRESSES = ["temp@example.com"];
+
+vi.mock("@/lib/server/config", () => ({
+  loadTempEmailSelectionConfig: () => ({
+    tempEmailAddresses: MOCK_TEMP_EMAIL_ADDRESSES,
+  }),
+}));
 
 describe("HomePage", () => {
   it("renders the workbench shell", () => {
