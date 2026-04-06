@@ -10,7 +10,7 @@
 `添加账号` 负责这三件事：
 
 - 生成授权 URL
-- 从固定邮箱 `crystiano@penaldo.top` 读取最新验证码
+- 从配置的邮箱列表中选择目标邮箱并读取最新验证码
 - 解析 `http://localhost:1455...?...code=...` 回调 URL，并完成 `exchange_code -> add_account`
 
 `批量测试` 负责这些事：
@@ -65,10 +65,13 @@ AUTH_PASSWORD=
 AUTH_COOKIE_SECRET=
 ADMIN_TOKEN=
 TEMP_EMAIL_ADMIN_PWD=
+TEMP_EMAIL_ADDRESSES=[123@321.com, 444@666.com]
 LOCAL_PROXY=
 ```
 
 这些变量沿用 `auto-add` 的后端接口命名，不重新发明新名字。
+
+`TEMP_EMAIL_ADDRESSES` 只接受类似 `[a@b.com, c@d.com]` 的数组形式，用来配置可选的临时邮箱地址。
 
 新增的 3 个登录门变量分别负责：
 
@@ -102,9 +105,10 @@ http://localhost:3000/login
 2. 点击“生成 URL”
 3. 手动打开生成出来的授权 URL
 4. 在外部页面完成操作
-5. 需要时点击“获取 code”读取固定邮箱里的最新验证码
-6. 把最终回调 URL 粘贴回页面
-7. 点击“添加”
+5. 需要时在“获取 code 邮箱”下拉框选择目标邮箱
+6. 再点击“获取 code”读取对应邮箱里的最新验证码
+7. 把最终回调 URL 粘贴回页面
+8. 点击“添加”
 
 ### 批量测试
 

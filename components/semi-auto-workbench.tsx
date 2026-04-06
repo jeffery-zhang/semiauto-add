@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   clearWorkbenchState,
@@ -55,6 +55,10 @@ interface BatchStatusPayload {
   failed: number;
   passed: number;
   rows: BatchResultRow[];
+}
+
+interface SemiAutoWorkbenchProps {
+  tempEmailAddresses: string[];
 }
 
 function CopyIcon() {
@@ -138,10 +142,11 @@ function sleep(delayMs: number) {
   });
 }
 
-export function SemiAutoWorkbench() {
+export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("add-account");
   const [email, setEmail] = useState("");
+  const [selectedTempEmailAddress, setSelectedTempEmailAddress] = useState("");
   const [authContext, setAuthContext] = useState<AuthSessionContext | null>(null);
   const [codeResult, setCodeResult] = useState<CodeResult | null>(null);
   const [callbackUrl, setCallbackUrl] = useState("");
@@ -174,6 +179,8 @@ export function SemiAutoWorkbench() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [batchFeedback, setBatchFeedback] = useState<ActionFeedback | null>(null);
   const [sessionFeedback, setSessionFeedback] = useState<ActionFeedback | null>(null);
+  const selectedTempEmailAddressRef = useRef("");
+  const fetchCodeRequestIdRef = useRef(0);
 
   useEffect(() => {
     const storedState = readWorkbenchState();
@@ -297,6 +304,15 @@ export function SemiAutoWorkbench() {
     }
   }
 
+  function handleTempEmailAddressChange(nextAddress: string) {
+    fetchCodeRequestIdRef.current += 1;
+    selectedTempEmailAddressRef.current = nextAddress;
+    setSelectedTempEmailAddress(nextAddress);
+    setIsFetchingCode(false);
+    setCodeResult(null);
+    setCodeFeedback(null);
+  }
+
   async function handleGenerateUrl() {
     const normalizedEmail = email.trim();
     if (!normalizedEmail) {
@@ -345,11 +361,25 @@ export function SemiAutoWorkbench() {
   }
 
   async function handleFetchCode() {
+    const address = selectedTempEmailAddress.trim();
+    if (!address) {
+      setCodeFeedback({ kind: "error", message: "请先选择验证码邮箱" });
+      return;
+    }
+
+    const requestId = fetchCodeRequestIdRef.current + 1;
+    fetchCodeRequestIdRef.current = requestId;
     setIsFetchingCode(true);
     setCodeFeedback(null);
 
     try {
-      const response = await fetchWithAuth("/api/code", { method: "POST" });
+      const response = await fetchWithAuth("/api/code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ address }),
+      });
       const payload = await response.json();
 
       if (!response.ok) {
@@ -357,15 +387,31 @@ export function SemiAutoWorkbench() {
         throw new Error(errorPayload.error?.message ?? "获取验证码失败");
       }
 
+      if (
+        fetchCodeRequestIdRef.current !== requestId ||
+        selectedTempEmailAddressRef.current.trim() !== address
+      ) {
+        return;
+      }
+
       setCodeResult(payload);
       setCodeFeedback({ kind: "success", message: "已读取最新验证码" });
     } catch (error) {
+      if (
+        fetchCodeRequestIdRef.current !== requestId ||
+        selectedTempEmailAddressRef.current.trim() !== address
+      ) {
+        return;
+      }
+
       setCodeFeedback({
         kind: "error",
         message: error instanceof Error ? error.message : "获取验证码失败",
       });
     } finally {
-      setIsFetchingCode(false);
+      if (fetchCodeRequestIdRef.current === requestId) {
+        setIsFetchingCode(false);
+      }
     }
   }
 
@@ -824,14 +870,32 @@ export function SemiAutoWorkbench() {
               </section>
             ) : null}
 
-            <button
-              type="button"
-              className="primary-button"
-              onClick={handleFetchCode}
-              disabled={isFetchingCode}
-            >
-              {isFetchingCode ? "Fetching code..." : "获取 code"}
-            </button>
+            <label className="field-block" htmlFor="temp-email-address-select">
+              <span className="field-label">获取 code 邮箱</span>
+              <select
+                id="temp-email-address-select"
+                value={selectedTempEmailAddress}
+                onChange={(event) => handleTempEmailAddressChange(event.target.value)}
+              >
+                <option value="">请选择验证码邮箱</option>
+                {tempEmailAddresses.map((address) => (
+                  <option key={address} value={address}>
+                    {address}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedTempEmailAddress ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleFetchCode}
+                disabled={isFetchingCode}
+              >
+                {isFetchingCode ? "Fetching code..." : "获取 code"}
+              </button>
+            ) : null}
 
             {codeResult ? (
               <section className="result-panel" aria-label="latest code result">

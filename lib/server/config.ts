@@ -4,7 +4,11 @@ export interface AuthConfig {
   authCookieSecret: string;
 }
 
-export interface RuntimeConfig extends AuthConfig {
+export interface TempEmailSelectionConfig {
+  tempEmailAddresses: string[];
+}
+
+export interface RuntimeConfig extends AuthConfig, TempEmailSelectionConfig {
   baseRouterHost: string;
   baseRouterAdminEmail: string;
   baseRouterAdminPassword: string;
@@ -33,6 +37,53 @@ function requireEnvValue(name: string, value: string | undefined, message: strin
   return normalized;
 }
 
+function parseTempEmailAddresses(value: string | undefined) {
+  const normalized = normalizeEnvValue(value);
+
+  if (!normalized) {
+    throw new Error(
+      "缺少 TEMP_EMAIL_ADDRESSES，请先在 .env 中配置临时邮箱列表，格式如 [123@321.com, 444@666.com]",
+    );
+  }
+
+  if (!normalized.startsWith("[") || !normalized.endsWith("]")) {
+    throw new Error(
+      "TEMP_EMAIL_ADDRESSES 格式错误，必须使用方括号数组格式，如 [123@321.com, 444@666.com]",
+    );
+  }
+
+  const entries = normalized
+    .slice(1, -1)
+    .split(",")
+    .map((item) => item.trim());
+
+  if (entries.length === 0 || entries.every((item) => !item)) {
+    throw new Error(
+      "TEMP_EMAIL_ADDRESSES 不能为空数组，格式如 [123@321.com, 444@666.com]",
+    );
+  }
+
+  if (entries.some((item) => !item)) {
+    throw new Error("TEMP_EMAIL_ADDRESSES 不能包含空邮箱项");
+  }
+
+  if (
+    entries.some(
+      (item) =>
+        item.startsWith('"') ||
+        item.endsWith('"') ||
+        item.startsWith("'") ||
+        item.endsWith("'"),
+    )
+  ) {
+    throw new Error(
+      "TEMP_EMAIL_ADDRESSES 不能包含带引号的邮箱项，请使用 [a@example.com, b@example.com] 格式",
+    );
+  }
+
+  return entries;
+}
+
 export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig {
   return {
     authUsername: requireEnvValue(
@@ -53,9 +104,18 @@ export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig
   };
 }
 
+export function loadTempEmailSelectionConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): TempEmailSelectionConfig {
+  return {
+    tempEmailAddresses: parseTempEmailAddresses(env.TEMP_EMAIL_ADDRESSES),
+  };
+}
+
 export function loadRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {
   return {
     ...loadAuthConfig(env),
+    ...loadTempEmailSelectionConfig(env),
     baseRouterHost: requireEnvValue(
       "BASE_ROUTER_HOST",
       env.BASE_ROUTER_HOST,
