@@ -30,6 +30,7 @@ describe("auth protection", () => {
     process.env.EXCHANGE_CODE_URL = "/exchange-code";
     process.env.ADD_ACCOUNT_URL = "/accounts";
     process.env.TEMP_EMAIL_ADMIN_PWD = "temp-secret";
+    process.env.TEMP_EMAIL_ADDRESSES = "[selected@penaldo.top]";
   });
 
   afterEach(() => {
@@ -45,6 +46,7 @@ describe("auth protection", () => {
     delete process.env.EXCHANGE_CODE_URL;
     delete process.env.ADD_ACCOUNT_URL;
     delete process.env.TEMP_EMAIL_ADMIN_PWD;
+    delete process.env.TEMP_EMAIL_ADDRESSES;
   });
 
   it("redirects unauthenticated page requests to /login", async () => {
@@ -105,8 +107,10 @@ describe("auth protection", () => {
       new Request("http://localhost/api/code", {
         method: "POST",
         headers: {
+          "content-type": "application/json",
           cookie: `${AUTH_COOKIE_NAME}=${cookieValue}`,
         },
+        body: JSON.stringify({ address: "selected@penaldo.top" }),
       }),
     );
     const payload = await response.json();

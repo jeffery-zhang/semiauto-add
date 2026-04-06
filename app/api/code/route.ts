@@ -8,13 +8,44 @@ import { loadRuntimeConfig } from "@/lib/server/config";
 import { toSafeErrorMessage } from "@/lib/server/errors";
 import { fetchTempEmailCodeJson } from "@/lib/server/temp-email/fetch-code";
 
-const FIXED_EMAIL_ADDRESS = "crystiano@penaldo.top";
-
 export async function POST(request: Request) {
   try {
     await requireAuthenticatedRequest(request);
+    let body: Record<string, unknown> = {};
+
+    try {
+      const parsedBody: unknown = await request.json();
+
+      if (
+        typeof parsedBody === "object" &&
+        parsedBody !== null &&
+        !Array.isArray(parsedBody)
+      ) {
+        body = parsedBody as Record<string, unknown>;
+      }
+    } catch {
+      body = {};
+    }
+
+    const address = String(body.address ?? "").trim();
+
+    if (!address) {
+      return NextResponse.json(
+        { error: { message: "缺少邮箱地址，请先选择临时邮箱" } },
+        { status: 400 },
+      );
+    }
+
     const config = loadRuntimeConfig();
-    const result = await fetchTempEmailCodeJson(FIXED_EMAIL_ADDRESS, { config });
+
+    if (!config.tempEmailAddresses.includes(address)) {
+      return NextResponse.json(
+        { error: { message: "邮箱地址不在允许列表中，请重新选择" } },
+        { status: 400 },
+      );
+    }
+
+    const result = await fetchTempEmailCodeJson(address, { config });
 
     return NextResponse.json({
       code: result.code,
