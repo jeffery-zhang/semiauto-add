@@ -24,7 +24,7 @@ describe("startBatchTestJob", () => {
   it("marks banned, passed and failed rows and updates progress", async () => {
     const requestAccountTestStreamImpl = vi
       .fn()
-      .mockImplementationOnce(async () => "401 ... deactived")
+      .mockImplementationOnce(async () => "401 ... account_deactivated")
       .mockImplementationOnce(async () => "all good")
       .mockImplementationOnce(async () => {
         throw new Error("timeout");
@@ -57,7 +57,7 @@ describe("startBatchTestJob", () => {
     const firstRun = await startBatchTestJob({
       config,
       accounts: [{ id: 1, email: "a@example.com" }],
-      requestAccountTestStreamImpl: vi.fn().mockResolvedValue("401 deactived"),
+      requestAccountTestStreamImpl: vi.fn().mockResolvedValue("401 account_deactivated"),
       now: () => "2026-04-05T10:00:00.000Z",
     });
 

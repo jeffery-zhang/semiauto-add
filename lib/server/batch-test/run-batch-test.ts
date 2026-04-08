@@ -14,9 +14,9 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 
 function resolveRowStatus(streamText: string) {
   const has401 = streamText.includes("401");
-  const hasDeactived = streamText.includes("deactived");
+  const hasAccountDeactivated = streamText.includes("account_deactivated");
 
-  if (has401 && hasDeactived) {
+  if (has401 && hasAccountDeactivated) {
     return "banned" as const;
   }
 
