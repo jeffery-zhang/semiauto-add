@@ -8,6 +8,7 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV TEMP_EMAIL_ADDRESSES="[crystiano@penaldo.top, jingomalegebi@jingo1.xyz]"
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -20,6 +21,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=9999
+ENV TEMP_EMAIL_ADDRESSES="[crystiano@penaldo.top, jingomalegebi@jingo1.xyz]"
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
