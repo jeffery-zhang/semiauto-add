@@ -49,7 +49,7 @@ npm install
 
 ## 配置
 
-复制 [`.env.example`](/D:/Code/Projects/semiauto-add/.env.example) 到 `.env`，并填入实际值：
+复制 `.env.example` 到 `.env`，并填入实际值：
 
 ```env
 BASE_ROUTER_HOST=
@@ -69,7 +69,7 @@ TEMP_EMAIL_ADDRESSES=[123@321.com, 444@666.com]
 LOCAL_PROXY=
 ```
 
-这些变量沿用 `auto-add` 的后端接口命名，不重新发明新名字。
+这些变量都应统一维护在 `.env`（本地开发）或由容器运行时注入（生产 compose / env_file）。不要再把业务配置硬编码到 `Dockerfile` 或其他源码文件中。
 
 `TEMP_EMAIL_ADDRESSES` 只接受类似 `[a@b.com, c@d.com]` 的数组形式，用来配置可选的临时邮箱地址。
 

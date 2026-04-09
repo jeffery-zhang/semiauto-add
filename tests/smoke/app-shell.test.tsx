@@ -1,9 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, vi } from "vitest";
+import { beforeEach, describe, it, vi } from "vitest";
 import HomePage from "@/app/page";
 import LoginPage from "@/app/login/page";
 
 const MOCK_TEMP_EMAIL_ADDRESSES = ["temp@example.com"];
+
+vi.mock("next/server", () => ({
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("@/lib/server/config", () => ({
   loadTempEmailSelectionConfig: () => ({
@@ -11,9 +15,13 @@ vi.mock("@/lib/server/config", () => ({
   }),
 }));
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("HomePage", () => {
-  it("renders the workbench shell", () => {
-    render(<HomePage />);
+  it("renders the workbench shell", async () => {
+    render(await HomePage());
 
     expect(screen.getByLabelText("semi-auto workbench")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "添加账号", selected: true })).toBeInTheDocument();
