@@ -48,7 +48,7 @@ Why:
   - [`auto-add/src/api/exchange-code.js`](/D:/Code/Projects/auto-add/src/api/exchange-code.js)
   - [`auto-add/src/api/add-account.js`](/D:/Code/Projects/auto-add/src/api/add-account.js)
   - [`auto-add/src/temp-email/service.js`](/D:/Code/Projects/auto-add/src/temp-email/service.js)
-  - [`auto-add/src/temp-email/code-parser.js`](/D:/Code/Projects/auto-add/src/temp-email/code-parser.js)
+  - [`auto-add/src/add-parser.js`](/D:/Code/Projects/auto-add/src/add-parser.js)
   - [`auto-add/src/temp-email/fetch-code.js`](/D:/Code/Projects/auto-add/src/temp-email/fetch-code.js)
   - [`auto-add/src/shared/account-payload.js`](/D:/Code/Projects/auto-add/src/shared/account-payload.js)
   - [`auto-add/src/shared/callback-url.js`](/D:/Code/Projects/auto-add/src/shared/callback-url.js)
@@ -117,7 +117,7 @@ Decision:
 - The browser never calls Base Router or temp-email directly.
 - The UI only talks to internal route handlers:
   - `POST /api/auth-url`
-  - `POST /api/code`
+  - `POST /api/add`
   - `POST /api/add`
 
 Rationale:
@@ -145,7 +145,7 @@ Decision:
   - `EXCHANGE_CODE_URL`
   - `ADD_ACCOUNT_URL`
   - `ADMIN_TOKEN`
-  - `TEMP_EMAIL_ADMIN_PWD`
+  - `TEMP_EMAIL_ADMIN_PWD`（已移除）
   - `ACCOUNT_PASSWORD`
   - `LOCAL_PROXY`
   - `BROWSER_PROFILE_DIR`
@@ -173,7 +173,7 @@ sequenceDiagram
     participant U as Operator
     participant P as Next.js Page (Client)
     participant A as /api/auth-url
-    participant C as /api/code
+    participant C as /api/add
     participant D as /api/add
     participant B as Base Router
     participant M as Temp Email
@@ -258,7 +258,7 @@ Files:
 - `/D:/Code/Projects/semiauto-add/src/server/lib/base-router/exchange-code.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/base-router/add-account.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/temp-email/service.ts`
-- `/D:/Code/Projects/semiauto-add/src/server/lib/temp-email/code-parser.ts`
+- `/D:/Code/Projects/semiauto-add/src/server/lib/add-parser.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/temp-email/fetch-code.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/accounts/payload.ts`
 - `/D:/Code/Projects/semiauto-add/src/shared/callback-url.ts`
@@ -268,7 +268,7 @@ Test files:
 - `/D:/Code/Projects/semiauto-add/src/server/lib/base-router/auth-url.test.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/base-router/exchange-code.test.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/base-router/add-account.test.ts`
-- `/D:/Code/Projects/semiauto-add/src/server/lib/temp-email/code-parser.test.ts`
+- `/D:/Code/Projects/semiauto-add/src/server/lib/add-parser.test.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/temp-email/fetch-code.test.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/lib/accounts/payload.test.ts`
 - `/D:/Code/Projects/semiauto-add/src/shared/callback-url.test.ts`
@@ -302,28 +302,28 @@ Goal:
 
 Files:
 - `/D:/Code/Projects/semiauto-add/app/api/auth-url/route.ts`
-- `/D:/Code/Projects/semiauto-add/app/api/code/route.ts`
+- `/D:/Code/Projects/semiauto-add/app/api/add/route.ts`
 - `/D:/Code/Projects/semiauto-add/app/api/add/route.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/http/json.ts`
 - `/D:/Code/Projects/semiauto-add/src/server/http/redact.ts`
 
 Test files:
 - `/D:/Code/Projects/semiauto-add/app/api/auth-url/route.test.ts`
-- `/D:/Code/Projects/semiauto-add/app/api/code/route.test.ts`
+- `/D:/Code/Projects/semiauto-add/app/api/add/route.test.ts`
 - `/D:/Code/Projects/semiauto-add/app/api/add/route.test.ts`
 
 Approach:
 - Make all three route handlers `POST`-only and explicit `nodejs` runtime handlers.
 - Return only minimal DTOs:
   - `/api/auth-url` -> `{ email, authUrl, sessionId, state }`
-  - `/api/code` -> `{ address, code, subject, from, createdAt, mailId }`
+  - `/api/add` -> `{ address, code, subject, from, createdAt, mailId }`
   - `/api/add` -> `{ email, status, isActive, code }` or a similarly small success summary
 - `/api/auth-url`:
   - accept `email` only as workflow context
   - ensure admin token readiness
   - call `requestGenAuthUrl`
   - extract `authUrl`, `sessionId`, and `state`
-- `/api/code`:
+- `/api/add`:
   - accept no user-controlled address
   - always fetch from `crystiano@penaldo.top`
 - `/api/add`:
@@ -338,8 +338,8 @@ Approach:
 Test scenarios:
 - `/api/auth-url` returns the minimal workflow DTO and never forwards raw upstream JSON.
 - `/api/auth-url` fails cleanly when `auth_url`, `session_id`, or `state` cannot be derived.
-- `/api/code` ignores any client attempt to override the mailbox and always fetches the fixed address.
-- `/api/code` returns a clean failure when no usable OTP mail exists.
+- `/api/add` ignores any client attempt to override the mailbox and always fetches the fixed address.
+- `/api/add` returns a clean failure when no usable OTP mail exists.
 - `/api/add` rejects missing workflow fields.
 - `/api/add` rejects callback URLs that do not start with `http://localhost:1455`.
 - `/api/add` rejects callback URLs that lack `code`.

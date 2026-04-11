@@ -34,7 +34,6 @@ source_requirements:
 - 当前页面入口是 [`app/page.tsx`](/D:/Code/Projects/semiauto-add/app/page.tsx)，工作台主体在 [`components/semi-auto-workbench.tsx`](/D:/Code/Projects/semiauto-add/components/semi-auto-workbench.tsx)。
 - 现有内部 API 都在 [`app/api`](/D:/Code/Projects/semiauto-add/app/api) 下，适合统一挂保护：
   - [`app/api/auth-url/route.ts`](/D:/Code/Projects/semiauto-add/app/api/auth-url/route.ts)
-  - [`app/api/code/route.ts`](/D:/Code/Projects/semiauto-add/app/api/code/route.ts)
   - [`app/api/add/route.ts`](/D:/Code/Projects/semiauto-add/app/api/add/route.ts)
   - [`app/api/batch-test`](/D:/Code/Projects/semiauto-add/app/api/batch-test)
 - 当前项目没有现成 auth、中间件或 cookie 工具封装，是绿地接入。
@@ -194,7 +193,6 @@ flowchart TD
 **Files:**
 - Create: [`middleware.ts`](/D:/Code/Projects/semiauto-add/middleware.ts)
 - Modify: [`app/api/auth-url/route.ts`](/D:/Code/Projects/semiauto-add/app/api/auth-url/route.ts)
-- Modify: [`app/api/code/route.ts`](/D:/Code/Projects/semiauto-add/app/api/code/route.ts)
 - Modify: [`app/api/add/route.ts`](/D:/Code/Projects/semiauto-add/app/api/add/route.ts)
 - Modify: [`app/api/batch-test/accounts/route.ts`](/D:/Code/Projects/semiauto-add/app/api/batch-test/accounts/route.ts)
 - Modify: [`app/api/batch-test/run/route.ts`](/D:/Code/Projects/semiauto-add/app/api/batch-test/run/route.ts)

@@ -10,7 +10,6 @@
 `添加账号` 负责这三件事：
 
 - 生成授权 URL
-- 从配置的邮箱列表中选择目标邮箱并读取最新验证码
 - 解析 `http://localhost:1455...?...code=...` 回调 URL，并完成 `exchange_code -> add_account`
 
 `批量测试` 负责这些事：
@@ -64,14 +63,10 @@ AUTH_USERNAME=
 AUTH_PASSWORD=
 AUTH_COOKIE_SECRET=
 ADMIN_TOKEN=
-TEMP_EMAIL_ADMIN_PWD=
-TEMP_EMAIL_ADDRESSES=[123@321.com, 444@666.com]
 LOCAL_PROXY=
 ```
 
 这些变量都应统一维护在 `.env`（本地开发）或由容器运行时注入（生产 compose / env_file）。不要再把业务配置硬编码到 `Dockerfile` 或其他源码文件中。
-
-`TEMP_EMAIL_ADDRESSES` 只接受类似 `[a@b.com, c@d.com]` 的数组形式，用来配置可选的临时邮箱地址。
 
 新增的 3 个登录门变量分别负责：
 
@@ -105,10 +100,8 @@ http://localhost:3000/login
 2. 点击“生成 URL”
 3. 手动打开生成出来的授权 URL
 4. 在外部页面完成操作
-5. 需要时在“获取 code 邮箱”下拉框选择目标邮箱
-6. 再点击“获取 code”读取对应邮箱里的最新验证码
-7. 把最终回调 URL 粘贴回页面
-8. 点击“添加”
+5. 把最终回调 URL 粘贴回页面
+6. 点击“添加”
 
 ### 批量测试
 
@@ -135,6 +128,6 @@ npm run build
 - 页面提供“清除当前 session”能力
 - 页面提供显式退出能力
 - 重新生成 URL 或修改邮箱时，会清空旧上下文和旧结果
-- 服务端不会把管理员 token、temp-email 管理密码或完整 callback code 透传到前端
+- 服务端不会把管理员 token 或完整 callback code 透传到前端
 - 服务端不会把共享登录密码或 cookie 签名密钥暴露到前端
 - 批量测试结果默认保留在当前服务生命周期内，直到用户主动清理

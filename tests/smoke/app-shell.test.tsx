@@ -3,16 +3,8 @@ import { beforeEach, describe, it, vi } from "vitest";
 import HomePage from "@/app/page";
 import LoginPage from "@/app/login/page";
 
-const MOCK_TEMP_EMAIL_ADDRESSES = ["temp@example.com"];
-
 vi.mock("next/server", () => ({
   connection: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/server/config", () => ({
-  loadTempEmailSelectionConfig: () => ({
-    tempEmailAddresses: MOCK_TEMP_EMAIL_ADDRESSES,
-  }),
 }));
 
 beforeEach(() => {
@@ -26,6 +18,8 @@ describe("HomePage", () => {
     expect(screen.getByLabelText("semi-auto workbench")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "添加账号", selected: true })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "批量测试", selected: false })).toBeInTheDocument();
+    expect(screen.queryByLabelText("获取 code 邮箱")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "获取 code" })).not.toBeInTheDocument();
   });
 });
 

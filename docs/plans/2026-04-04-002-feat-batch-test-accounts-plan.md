@@ -261,7 +261,7 @@ flowchart TD
 
 **Patterns To Follow**
 
-- 现有 `fetchTempEmailCodeJson` 的“先拉数据再格式化”的分层思路，参考 [`fetch-code.ts`](/D:/Code/Projects/semiauto-add/lib/server/temp-email/fetch-code.ts)
+- 现有 `历史 fetchTempEmailCodeJson` 的“先拉数据再格式化”的分层思路，参考 [`fetch-code.ts`](/D:/Code/Projects/semiauto-add/lib/server/temp-email/fetch-code.ts)
 
 **Test Scenarios**
 

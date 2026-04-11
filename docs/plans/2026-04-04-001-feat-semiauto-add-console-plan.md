@@ -28,7 +28,7 @@ origin: docs/brainstorms/2026-04-04-semiauto-add-requirements.md
 ## Scope Boundaries
 - 只做单页内部操作台和所需 Route Handlers，不做多页面后台。
 - 不做任何浏览器自动化、手机号验证处理、授权页 DOM 交互或 localhost 监听。
-- 不做验证码邮箱切换；始终查 `crystiano@penaldo.top`。
+- 不做历史验证码邮箱切换；始终查 `crystiano@penaldo.top`。
 - 不在本轮引入数据库、队列、任务历史或多用户会话管理。
 - 不要求跨标签页或跨进程共享授权上下文；会话丢失后允许重新生成 URL。
 
@@ -52,7 +52,7 @@ origin: docs/brainstorms/2026-04-04-semiauto-add-requirements.md
   - [`src/shared/callback-url.js`](/D:/Code/Projects/auto-add/src/shared/callback-url.js)
   - [`src/shared/errors.js`](/D:/Code/Projects/auto-add/src/shared/errors.js)
   - [`src/temp-email/service.js`](/D:/Code/Projects/auto-add/src/temp-email/service.js)
-  - [`src/temp-email/code-parser.js`](/D:/Code/Projects/auto-add/src/temp-email/code-parser.js)
+  - [`src/add-parser.js`](/D:/Code/Projects/auto-add/src/add-parser.js)
   - [`src/temp-email/fetch-code.js`](/D:/Code/Projects/auto-add/src/temp-email/fetch-code.js)
 - 绝不能迁入新项目运行时的目录：
   - [`src/browser/`](/D:/Code/Projects/auto-add/src/browser)
@@ -122,8 +122,8 @@ sequenceDiagram
 
     U->>U: 手动打开 authUrl 完成外部授权
 
-    U->>UI: 点击“获取 code”
-    UI->>API: POST /api/temp-email/code
+    U->>UI: 点击“粘贴回调 URL”
+    UI->>API: POST /api/add
     API->>TE: 查询 crystiano@penaldo.top 最新邮件
     API-->>UI: { code, subject, from, createdAt }
 
@@ -168,7 +168,7 @@ sequenceDiagram
 **Test Scenarios**
 - 当核心变量缺失时，`runtime-config` 返回明确错误，错误文案能指向缺少哪一个字段。
 - 当旧 `.env` 包含 `ACCOUNT_PASSWORD`、`BROWSER_PROFILE_DIR` 时，新项目不会因为这些字段存在而失败，也不会要求它们。
-- `logger` 会脱敏 `Authorization`、`adminToken`、`TEMP_EMAIL_ADMIN_PWD`、callback URL 中的 `code`。
+- `logger` 会脱敏 `Authorization`、`adminToken`、`TEMP_EMAIL_ADMIN_PWD`（已移除）、callback URL 中的 `code`。
 - `.env.example` 保留与 `auto-add` 一致的关键字段命名，并额外注明哪些字段在 semiauto 中已不再使用。
 
 ### [ ] Unit 2: Port server-only integration modules and semiauto orchestration services
@@ -182,7 +182,7 @@ sequenceDiagram
 - [src/lib/server/account-payload.js](/D:/Code/Projects/semiauto-add/src/lib/server/account-payload.js)
 - [src/lib/server/callback-url.js](/D:/Code/Projects/semiauto-add/src/lib/server/callback-url.js)
 - [src/lib/server/temp-email/service.js](/D:/Code/Projects/semiauto-add/src/lib/server/temp-email/service.js)
-- [src/lib/server/temp-email/code-parser.js](/D:/Code/Projects/semiauto-add/src/lib/server/temp-email/code-parser.js)
+- [src/lib/server/add-parser.js](/D:/Code/Projects/semiauto-add/src/lib/server/add-parser.js)
 - [src/lib/server/temp-email/fetch-code.js](/D:/Code/Projects/semiauto-add/src/lib/server/temp-email/fetch-code.js)
 - [src/lib/server/semiauto/generate-auth-session.js](/D:/Code/Projects/semiauto-add/src/lib/server/semiauto/generate-auth-session.js)
 - [src/lib/server/semiauto/fetch-fixed-code.js](/D:/Code/Projects/semiauto-add/src/lib/server/semiauto/fetch-fixed-code.js)
@@ -223,7 +223,7 @@ sequenceDiagram
 
 **Files**
 - [src/app/api/auth-url/route.js](/D:/Code/Projects/semiauto-add/src/app/api/auth-url/route.js)
-- [src/app/api/temp-email/code/route.js](/D:/Code/Projects/semiauto-add/src/app/api/temp-email/code/route.js)
+- [src/app/api/add/route.js](/D:/Code/Projects/semiauto-add/src/app/api/add/route.js)
 - [src/app/api/add-account/route.js](/D:/Code/Projects/semiauto-add/src/app/api/add-account/route.js)
 - [src/lib/server/http-response.js](/D:/Code/Projects/semiauto-add/src/lib/server/http-response.js)
 
@@ -239,7 +239,7 @@ sequenceDiagram
   - 校验邮箱非空
   - 调用 `generate-auth-session`
   - 只返回前端需要的最小上下文
-- `POST /api/temp-email/code`
+- `POST /api/add`
   - 不接收邮箱
   - 调用 `fetch-fixed-code`
   - 返回 `{ code, subject, from, createdAt, mailId }`
@@ -252,10 +252,10 @@ sequenceDiagram
 
 **Test Scenarios**
 - `auth-url` 路由在缺少邮箱时返回 400；成功时返回的 JSON 不包含管理员 token 或原始第三方响应。
-- `temp-email/code` 路由不会接受前端自定义邮箱；即使前端传了，也应忽略或直接拒绝。
+- `add` 路由不会接受前端自定义邮箱；即使前端传了，也应忽略或直接拒绝。
 - `add-account` 路由在缺少 `sessionId`、`state`、`callbackUrl` 任一字段时返回 400。
 - `add-account` 路由在 callback URL 不是 `http://localhost:1455...` 或缺少 `code` 时返回明确失败，不继续打后端接口。
-- 路由错误体不会泄露 `Authorization`、`TEMP_EMAIL_ADMIN_PWD`、完整 `code`、完整 callback URL。
+- 路由错误体不会泄露 `Authorization`、`TEMP_EMAIL_ADMIN_PWD`（已移除）、完整 `code`、完整 callback URL。
 
 ### [ ] Unit 4: Build the single-page operator console and client-side session behavior
 **Requirements:** R1-R7e, R10a, R11-R17
@@ -292,7 +292,7 @@ sequenceDiagram
 - 生成 URL 成功后会展示 URL、保存 `sessionStorage`、启用“重新生成”和“清除当前 session”。
 - 点击“重新生成”会清空旧 code、旧 callback、旧提交结果，并用新返回替换授权上下文。
 - 生成成功后修改邮箱，会重置所有依赖旧会话的数据，并要求重新生成。
-- 点击“获取 code”时按钮进入 loading，完成后展示 code 与邮件元信息。
+- 点击“粘贴回调 URL”时按钮进入 loading，完成后展示 code 与邮件元信息。
 - 点击“添加”时按钮进入 loading，成功后展示摘要；失败时保留必要输入，方便重试。
 - 刷新后如果 `sessionStorage` 有合法上下文，会恢复到可继续填写 callback URL 的状态；如果数据损坏，会自动清掉并回到初始态。
 
@@ -309,7 +309,7 @@ sequenceDiagram
   - 不再需要 Playwright 和浏览器 profile
   - 不再需要账号密码自动填写
   - `GEN_AUTH_URL` 不吃邮箱
-  - `获取 code` 固定查 `crystiano@penaldo.top`
+  - `粘贴回调 URL` 固定查 `crystiano@penaldo.top`
 - 给出“什么时候需要重新生成 URL”“什么时候需要清除 session”的操作说明，减少误操作。
 
 ## System-Wide Impact
@@ -352,6 +352,6 @@ sequenceDiagram
 - Reuse source: [account-payload.js](/D:/Code/Projects/auto-add/src/shared/account-payload.js)
 - Reuse source: [callback-url.js](/D:/Code/Projects/auto-add/src/shared/callback-url.js)
 - Reuse source: [fetch-code.js](/D:/Code/Projects/auto-add/src/temp-email/fetch-code.js)
-- Reuse source: [code-parser.js](/D:/Code/Projects/auto-add/src/temp-email/code-parser.js)
+- Reuse source: [code-parser.js](/D:/Code/Projects/auto-add/src/add-parser.js)
 - Next.js Route Handlers: [nextjs.org/docs/app/building-your-application/routing/route-handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
 - Next.js Server / Client Components: [nextjs.org/docs/app/getting-started/server-and-client-components](https://nextjs.org/docs/app/getting-started/server-and-client-components)

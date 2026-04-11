@@ -14,7 +14,6 @@ source_requirements:
 需要在绿地仓库 [`semiauto-add`](/D:/Code/Projects/semiauto-add) 中搭建一个单体 Next.js 内部操作台，替代 [`auto-add`](/D:/Code/Projects/auto-add) 当前 `Node.js + Playwright` 的浏览器自动化流程。新的系统只保留三类能力：
 
 - 生成授权 URL
-- 从固定 temp-email 地址读取最新验证码
 - 基于手工粘贴的 localhost 回调 URL 完成 `exchange_code -> add_account`
 
 本计划以 [`2026-04-04-semiauto-add-requirements.md`](/D:/Code/Projects/semiauto-add/docs/brainstorms/2026-04-04-semiauto-add-requirements.md) 为唯一上游事实源，不再重新定义产品行为。
@@ -29,7 +28,7 @@ source_requirements:
 
 ## Requirements Trace
 
-- R1-R7e：由单页客户端工作台、按钮状态机、重生成重置逻辑、即时取码和成功摘要承担。
+- R1-R7e：由单页客户端工作台、按钮状态机、重生成重置逻辑和成功摘要承担。
 - R8-R10a：由 `auto-add` 迁移出的 server-only HTTP 模块、回调解析模块、前端 session 管理承担。
 - R11-R18：由 Next.js App Router 架构、Route Handlers、敏感信息只留服务端、日志脱敏、环境变量复用承担。
 
@@ -49,15 +48,14 @@ source_requirements:
 - `exchange_code` 与 `add_account` 请求模式来自 [`auto-add/src/api/exchange-code.js`](/D:/Code/Projects/auto-add/src/api/exchange-code.js) 和 [`auto-add/src/api/add-account.js`](/D:/Code/Projects/auto-add/src/api/add-account.js)。
 - `add_account` payload 组装模式来自 [`auto-add/src/shared/account-payload.js`](/D:/Code/Projects/auto-add/src/shared/account-payload.js)。
 - 回调 URL 解析模式来自 [`auto-add/src/shared/callback-url.js`](/D:/Code/Projects/auto-add/src/shared/callback-url.js)。
-- temp-email 拉信与验证码提取模式来自 [`auto-add/src/temp-email/service.js`](/D:/Code/Projects/auto-add/src/temp-email/service.js)、[`auto-add/src/temp-email/code-parser.js`](/D:/Code/Projects/auto-add/src/temp-email/code-parser.js)、[`auto-add/src/temp-email/fetch-code.js`](/D:/Code/Projects/auto-add/src/temp-email/fetch-code.js)。
+- 回调 URL 解析与账号添加能力继续复用 `auto-add` 中已验证的纯 HTTP 模块与共享逻辑。
 
 ### Existing Test Anchors
 
 - `requestGenAuthUrl` 的 POST + Bearer 行为见 [`auto-add/index.test.js:1092`](/D:/Code/Projects/auto-add/index.test.js:1092)。
 - `requestExchangeCode` 的 `{ code, session_id, state }` payload 行为见 [`auto-add/index.test.js:386`](/D:/Code/Projects/auto-add/index.test.js:386)。
 - `requestAddAccount` 的 payload 与错误包装见 [`auto-add/index.test.js:490`](/D:/Code/Projects/auto-add/index.test.js:490)。
-- `fetchTempEmailCodeJson` 的列表读取、补拉详情、代理、无验证码报错见 [`auto-add/index.test.js:700`](/D:/Code/Projects/auto-add/index.test.js:700)。
-- localhost callback 的 `code` 解析与 flow 组合见 [`auto-add/index.test.js:1654`](/D:/Code/Projects/auto-add/index.test.js:1654)。
+- - localhost callback 的 `code` 解析与 flow 组合见 [`auto-add/index.test.js:1654`](/D:/Code/Projects/auto-add/index.test.js:1654)。
 
 ### External References
 
@@ -76,12 +74,12 @@ source_requirements:
 ### 1. 采用单体 Next.js App Router，而不是拆分前后端
 
 - 页面和 API 都很薄，拆服务只会增加部署和状态同步成本。
-- Route Handlers 足够承载三个内部 API：生成 URL、取码、添加账号。
+- Route Handlers 足够承载两个内部 API：生成 URL、添加账号。
 - 这直接落实 origin 里的 R11。
 
 ### 2. 复用 `auto-add` 的“纯 HTTP 能力”，不复用其总编排 flow
 
-- 迁移对象是 API client、token 管理、回调解析、temp-email 解析和 payload 组装。
+- 迁移对象是 API client、token 管理、回调解析和 payload 组装。
 - 不迁移 `browser/`、`flows/`、`locators/`，也不保留兼容层。
 - 理由：旧项目里真正稳定的是接口能力，不是 Playwright 页面流程。
 
@@ -95,7 +93,7 @@ source_requirements:
 
 - 客户端向服务端提交 `email`、`sessionId`、`state`、`callbackUrl`。
 - 服务端自行解析 `code`，再调用 `exchange_code -> add_account`。
-- 不把管理员 token、第三方完整原始响应或 temp-email 凭据暴露给前端。
+- 不把管理员 token 或第三方完整原始响应暴露给前端。
 
 ### 5. 管理员 token 逻辑沿用 `auto-add`，但适配为“请求时准备”
 
@@ -111,7 +109,7 @@ source_requirements:
 
 ### 7. 只复用仍然有业务意义的 `auto-add` 环境变量
 
-- 保留：`BASE_ROUTER_HOST`、`BASE_ROUTER_ADMIN_EMAIL`、`BASE_ROUTER_ADMIN_PASSWORD`、`GEN_AUTH_URL`、`AUTH_URL`、`LOGIN_URL`、`EXCHANGE_CODE_URL`、`ADD_ACCOUNT_URL`、`ADMIN_TOKEN`、`TEMP_EMAIL_ADMIN_PWD`、`LOCAL_PROXY`。
+- 保留：`BASE_ROUTER_HOST`、`BASE_ROUTER_ADMIN_EMAIL`、`BASE_ROUTER_ADMIN_PASSWORD`、`GEN_AUTH_URL`、`AUTH_URL`、`LOGIN_URL`、`EXCHANGE_CODE_URL`、`ADD_ACCOUNT_URL`、`ADMIN_TOKEN`、`LOCAL_PROXY`。
 - 移除：`ACCOUNT_PASSWORD`、`BROWSER_PROFILE_DIR`，因为它们只服务旧的浏览器自动化流程。
 - 这仍然满足 R18 的核心意图：共享后端接口语义和配置命名，不重新发明一套配置名。
 
@@ -125,8 +123,6 @@ sequenceDiagram
     participant C as "Client Workbench"
     participant A as "Route Handler /api/auth-url"
     participant B as "Base Router Admin APIs"
-    participant M as "Route Handler /api/code"
-    participant T as "Temp Email API"
     participant X as "Route Handler /api/add"
 
     U->>C: 输入邮箱，点击生成 URL
@@ -135,12 +131,6 @@ sequenceDiagram
     B-->>A: auth_url + session_id
     A-->>C: authUrl + sessionId + state + email
     C->>C: 写入 sessionStorage
-
-    U->>C: 点击获取 code
-    C->>M: POST {}
-    M->>T: 读取 crystiano@penaldo.top 最新邮件
-    T-->>M: 最新邮件内容
-    M-->>C: code + mail metadata
 
     U->>C: 手动打开 URL，完成授权，粘贴 localhost 回调 URL
     C->>X: POST { email, sessionId, state, callbackUrl }
@@ -188,7 +178,7 @@ sequenceDiagram
   - 页面根节点能渲染工作台占位内容。
   - 没有任何业务输入时，不出现成功态或错误态残留。
 - 配置样例检查
-  - `.env.example` 包含 `BASE_ROUTER_HOST`、`BASE_ROUTER_ADMIN_EMAIL`、`BASE_ROUTER_ADMIN_PASSWORD`、`GEN_AUTH_URL`、`AUTH_URL`、`LOGIN_URL`、`EXCHANGE_CODE_URL`、`ADD_ACCOUNT_URL`、`ADMIN_TOKEN`、`TEMP_EMAIL_ADMIN_PWD`、`LOCAL_PROXY`。
+  - `.env.example` 包含 `BASE_ROUTER_HOST`、`BASE_ROUTER_ADMIN_EMAIL`、`BASE_ROUTER_ADMIN_PASSWORD`、`GEN_AUTH_URL`、`AUTH_URL`、`LOGIN_URL`、`EXCHANGE_CODE_URL`、`ADD_ACCOUNT_URL`、`ADMIN_TOKEN`、`LOCAL_PROXY`。
   - `.env.example` 不再包含 `ACCOUNT_PASSWORD` 与 `BROWSER_PROFILE_DIR`。
 
 **Dependencies / Sequence**
@@ -209,19 +199,14 @@ sequenceDiagram
 - Create: [`lib/server/base-router/auth-url.ts`](/D:/Code/Projects/semiauto-add/lib/server/base-router/auth-url.ts)
 - Create: [`lib/server/base-router/exchange-code.ts`](/D:/Code/Projects/semiauto-add/lib/server/base-router/exchange-code.ts)
 - Create: [`lib/server/base-router/add-account.ts`](/D:/Code/Projects/semiauto-add/lib/server/base-router/add-account.ts)
-- Create: [`lib/server/temp-email/service.ts`](/D:/Code/Projects/semiauto-add/lib/server/temp-email/service.ts)
-- Create: [`lib/server/temp-email/code-parser.ts`](/D:/Code/Projects/semiauto-add/lib/server/temp-email/code-parser.ts)
-- Create: [`lib/server/temp-email/fetch-code.ts`](/D:/Code/Projects/semiauto-add/lib/server/temp-email/fetch-code.ts)
-- Create: [`lib/shared/callback-url.ts`](/D:/Code/Projects/semiauto-add/lib/shared/callback-url.ts)
+- - - - Create: [`lib/shared/callback-url.ts`](/D:/Code/Projects/semiauto-add/lib/shared/callback-url.ts)
 - Create: [`lib/shared/account-payload.ts`](/D:/Code/Projects/semiauto-add/lib/shared/account-payload.ts)
 - Create: [`tests/unit/lib/server/config.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/config.test.ts)
 - Create: [`tests/unit/lib/server/base-router/admin-token.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/base-router/admin-token.test.ts)
 - Create: [`tests/unit/lib/server/base-router/auth-url.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/base-router/auth-url.test.ts)
 - Create: [`tests/unit/lib/server/base-router/exchange-code.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/base-router/exchange-code.test.ts)
 - Create: [`tests/unit/lib/server/base-router/add-account.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/base-router/add-account.test.ts)
-- Create: [`tests/unit/lib/server/temp-email/code-parser.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/temp-email/code-parser.test.ts)
-- Create: [`tests/unit/lib/server/temp-email/fetch-code.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/server/temp-email/fetch-code.test.ts)
-- Create: [`tests/unit/lib/shared/callback-url.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/shared/callback-url.test.ts)
+- - - Create: [`tests/unit/lib/shared/callback-url.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/shared/callback-url.test.ts)
 - Create: [`tests/unit/lib/shared/account-payload.test.ts`](/D:/Code/Projects/semiauto-add/tests/unit/lib/shared/account-payload.test.ts)
 
 **Approach**
@@ -231,8 +216,7 @@ sequenceDiagram
 - `admin-token.ts` 保留“校验 -> 401 时登录 -> 更新当前运行态 token”的旧模式。
 - `auth-url.ts` 负责提取 `authUrl` 与 `sessionId`，并从 `authUrl` query 中提取 `state`。
 - `callback-url.ts` 必须继续使用与旧项目同等语义的 `URL` 解析逻辑，且校验前缀为 `http://localhost:1455`。
-- `fetch-code.ts` 只实现“读取当前最新邮件中的验证码”，不带轮询窗口。
-
+- 
 **Test Scenarios**
 
 - `tests/unit/lib/server/config.test.ts`
@@ -253,10 +237,6 @@ sequenceDiagram
 - `tests/unit/lib/server/base-router/add-account.test.ts`
   - 会发送组装后的 payload。
   - 非 2xx 和缺少 `status` 的响应会失败。
-- `tests/unit/lib/server/temp-email/fetch-code.test.ts`
-  - 固定读取最新地址的最新邮件，不轮询。
-  - 列表缺少正文时会按 `detail_url` 补拉详情。
-  - 找不到验证码时抛出明确错误。
 - `tests/unit/lib/shared/callback-url.test.ts`
   - 可从 `http://localhost:1455/...?...code=...` 提取 `code`。
   - 非 localhost 前缀或缺少 `code` 时失败。
@@ -278,10 +258,10 @@ sequenceDiagram
 **Files**
 
 - Create: [`app/api/auth-url/route.ts`](/D:/Code/Projects/semiauto-add/app/api/auth-url/route.ts)
-- Create: [`app/api/code/route.ts`](/D:/Code/Projects/semiauto-add/app/api/code/route.ts)
+- Create: [`app/api/add/route.ts`](/D:/Code/Projects/semiauto-add/app/api/add/route.ts)
 - Create: [`app/api/add/route.ts`](/D:/Code/Projects/semiauto-add/app/api/add/route.ts)
 - Create: [`tests/integration/app/api/auth-url.route.test.ts`](/D:/Code/Projects/semiauto-add/tests/integration/app/api/auth-url.route.test.ts)
-- Create: [`tests/integration/app/api/code.route.test.ts`](/D:/Code/Projects/semiauto-add/tests/integration/app/api/code.route.test.ts)
+- Create: [`tests/integration/app/api/add.route.test.ts`](/D:/Code/Projects/semiauto-add/tests/integration/app/api/add.route.test.ts)
 - Create: [`tests/integration/app/api/add.route.test.ts`](/D:/Code/Projects/semiauto-add/tests/integration/app/api/add.route.test.ts)
 
 **Approach**
@@ -290,7 +270,7 @@ sequenceDiagram
   - 输入：`{ email }`
   - 行为：校验 email 非空，准备管理员 token，请求 `GEN_AUTH_URL`
   - 输出：`{ email, authUrl, sessionId, state }`
-- `/api/code`
+- `/api/add`
   - 输入：空对象或无 body
   - 行为：固定读取 `crystiano@penaldo.top`
   - 输出：`{ code, subject, from, mailId, createdAt }`
@@ -306,7 +286,7 @@ sequenceDiagram
   - 空邮箱返回 400。
   - 成功时返回 `email`、`authUrl`、`sessionId`、`state`。
   - 失败时错误信息不泄露 Bearer token。
-- `tests/integration/app/api/code.route.test.ts`
+- `tests/integration/app/api/add.route.test.ts`
   - 成功时返回验证码和邮件元信息。
   - temp-email 无验证码时返回明确失败。
   - 路由不会接收或暴露前端传来的邮箱。
@@ -366,7 +346,7 @@ sequenceDiagram
   - 若 `sessionStorage` 已有有效上下文，首次渲染时恢复 URL 展示区与成功摘要。
   - 点击“生成 URL”成功后显示 URL 展示区与重新生成按钮。
   - 邮箱变更会重置旧上下文和旧结果。
-  - 点击“获取 code”只触发一次即时请求，并展示 code 与邮件元信息。
+  - 点击“粘贴回调 URL”只触发一次即时请求，并展示 code 与邮件元信息。
   - 点击“添加”前缺少上下文或回调 URL 时按钮被禁用或提示错误。
   - 添加成功后保留成功摘要。
   - 点击“清除当前 session”后恢复初始态。
@@ -391,7 +371,7 @@ sequenceDiagram
 
 - README 只说明这是什么、需要哪些环境变量、页面怎么操作、哪些行为是手工完成的。
 - 把跨层 contract 场景固化成集成测试，避免后面改 UI 或路由时破坏关键行为。
-- 文档明确：最终 callback URL 必须是 `http://localhost:1455` 前缀；验证码邮箱固定；系统不自动打开授权页。
+- 文档明确：最终 callback URL 必须是 `http://localhost:1455` 前缀；历史验证码邮箱固定；系统不自动打开授权页。
 
 **Test Scenarios**
 
@@ -425,7 +405,7 @@ sequenceDiagram
 
 - Base Router 管理接口可用，并维持现有环境变量语义。
 - temp-email 管理接口可用，并继续支持 `x-admin-auth` 请求头。
-- `crystiano@penaldo.top` 可持续作为固定验证码邮箱。
+- `crystiano@penaldo.top` 可持续作为固定历史验证码邮箱。
 
 ## Open Questions
 
@@ -433,7 +413,7 @@ sequenceDiagram
 
 - 授权上下文存前端 session，而不是服务端 session。
 - 页面必须提供清除当前 session 的能力。
-- 获取 code 为即时单次读取，不做轮询。
+- 粘贴回调 URL 为即时单次读取，不做轮询。
 - 最终回调 URL 继续沿用 `http://localhost:1455` + `code` 参数的旧规则。
 - 新项目环境变量命名直接复用 `auto-add`。
 - 不引入 Playwright，包括运行时和测试时。

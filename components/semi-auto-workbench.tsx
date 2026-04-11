@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   clearWorkbenchState,
@@ -10,14 +10,6 @@ import {
   type AuthSessionContext,
 } from "@/lib/client/auth-session";
 import { buildRandomProfileName } from "@/lib/shared/profile-data";
-
-interface CodeResult {
-  code: string;
-  subject: string;
-  from: string;
-  mailId: string | number | null;
-  createdAt: string | null;
-}
 
 interface ActionFeedback {
   kind: "success" | "error";
@@ -57,9 +49,7 @@ interface BatchStatusPayload {
   rows: BatchResultRow[];
 }
 
-interface SemiAutoWorkbenchProps {
-  tempEmailAddresses: string[];
-}
+interface SemiAutoWorkbenchProps {}
 
 function CopyIcon() {
   return (
@@ -142,20 +132,16 @@ function sleep(delayMs: number) {
   });
 }
 
-export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps) {
+export function SemiAutoWorkbench(_props: SemiAutoWorkbenchProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("add-account");
   const [email, setEmail] = useState("");
-  const [selectedTempEmailAddress, setSelectedTempEmailAddress] = useState("");
   const [authContext, setAuthContext] = useState<AuthSessionContext | null>(null);
-  const [codeResult, setCodeResult] = useState<CodeResult | null>(null);
   const [callbackUrl, setCallbackUrl] = useState("");
   const [successSummary, setSuccessSummary] = useState<AddSuccessSummary | null>(null);
   const [generateFeedback, setGenerateFeedback] = useState<ActionFeedback | null>(null);
-  const [codeFeedback, setCodeFeedback] = useState<ActionFeedback | null>(null);
   const [addFeedback, setAddFeedback] = useState<ActionFeedback | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isFetchingCode, setIsFetchingCode] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
@@ -179,8 +165,6 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [batchFeedback, setBatchFeedback] = useState<ActionFeedback | null>(null);
   const [sessionFeedback, setSessionFeedback] = useState<ActionFeedback | null>(null);
-  const selectedTempEmailAddressRef = useRef("");
-  const fetchCodeRequestIdRef = useRef(0);
 
   useEffect(() => {
     const storedState = readWorkbenchState();
@@ -243,10 +227,8 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
 
   function resetFlowState(nextEmail: string) {
     setAuthContext(null);
-    setCodeResult(null);
     setCallbackUrl("");
     setGenerateFeedback(null);
-    setCodeFeedback(null);
     setAddFeedback(null);
     setSuccessSummary(null);
     setCopiedToken(null);
@@ -304,15 +286,6 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
     }
   }
 
-  function handleTempEmailAddressChange(nextAddress: string) {
-    fetchCodeRequestIdRef.current += 1;
-    selectedTempEmailAddressRef.current = nextAddress;
-    setSelectedTempEmailAddress(nextAddress);
-    setIsFetchingCode(false);
-    setCodeResult(null);
-    setCodeFeedback(null);
-  }
-
   async function handleGenerateUrl() {
     const normalizedEmail = email.trim();
     if (!normalizedEmail) {
@@ -346,7 +319,6 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
         state: payload.state,
         generatedName: buildRandomProfileName(),
       });
-      setCodeResult(null);
       setCallbackUrl("");
       setSuccessSummary(null);
       setGenerateFeedback({ kind: "success", message: "授权 URL 已生成" });
@@ -357,61 +329,6 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
       });
     } finally {
       setIsGenerating(false);
-    }
-  }
-
-  async function handleFetchCode() {
-    const address = selectedTempEmailAddress.trim();
-    if (!address) {
-      setCodeFeedback({ kind: "error", message: "请先选择验证码邮箱" });
-      return;
-    }
-
-    const requestId = fetchCodeRequestIdRef.current + 1;
-    fetchCodeRequestIdRef.current = requestId;
-    setIsFetchingCode(true);
-    setCodeFeedback(null);
-
-    try {
-      const response = await fetchWithAuth("/api/code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ address }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        const errorPayload = payload as { error?: { message?: string } };
-        throw new Error(errorPayload.error?.message ?? "获取验证码失败");
-      }
-
-      if (
-        fetchCodeRequestIdRef.current !== requestId ||
-        selectedTempEmailAddressRef.current.trim() !== address
-      ) {
-        return;
-      }
-
-      setCodeResult(payload);
-      setCodeFeedback({ kind: "success", message: "已读取最新验证码" });
-    } catch (error) {
-      if (
-        fetchCodeRequestIdRef.current !== requestId ||
-        selectedTempEmailAddressRef.current.trim() !== address
-      ) {
-        return;
-      }
-
-      setCodeFeedback({
-        kind: "error",
-        message: error instanceof Error ? error.message : "获取验证码失败",
-      });
-    } finally {
-      if (fetchCodeRequestIdRef.current === requestId) {
-        setIsFetchingCode(false);
-      }
     }
   }
 
@@ -870,69 +787,6 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
               </section>
             ) : null}
 
-            <label className="field-block" htmlFor="temp-email-address-select">
-              <span className="field-label">获取 code 邮箱</span>
-              <select
-                id="temp-email-address-select"
-                value={selectedTempEmailAddress}
-                onChange={(event) => handleTempEmailAddressChange(event.target.value)}
-              >
-                <option value="">请选择验证码邮箱</option>
-                {tempEmailAddresses.map((address) => (
-                  <option key={address} value={address}>
-                    {address}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {selectedTempEmailAddress ? (
-              <button
-                type="button"
-                className="primary-button"
-                onClick={handleFetchCode}
-                disabled={isFetchingCode}
-              >
-                {isFetchingCode ? "Fetching code..." : "获取 code"}
-              </button>
-            ) : null}
-
-            {codeResult ? (
-              <section className="result-panel" aria-label="latest code result">
-                <p className="section-label">最新验证码</p>
-                <div className="copy-row">
-                  <strong className="code-chip">{codeResult.code}</strong>
-                  <button
-                    type="button"
-                    className="copy-icon-button"
-                    aria-label={copiedToken === "latest-code" ? "已复制验证码" : "复制验证码"}
-                    title={copiedToken === "latest-code" ? "已复制验证码" : "复制验证码"}
-                    onClick={() => copyText(codeResult.code, "latest-code")}
-                  >
-                    <CopyIcon />
-                  </button>
-                </div>
-                <dl className="meta-grid">
-                  <div>
-                    <dt>Subject</dt>
-                    <dd>{codeResult.subject || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>From</dt>
-                    <dd>{codeResult.from || "-"}</dd>
-                  </div>
-                  <div>
-                    <dt>Mail ID</dt>
-                    <dd>{String(codeResult.mailId ?? "-")}</dd>
-                  </div>
-                  <div>
-                    <dt>Created At</dt>
-                    <dd>{codeResult.createdAt || "-"}</dd>
-                  </div>
-                </dl>
-              </section>
-            ) : null}
-
             <label className="field-block" htmlFor="callback-url-input">
               <span className="field-label">回调 URL</span>
               <textarea
@@ -957,9 +811,6 @@ export function SemiAutoWorkbench({ tempEmailAddresses }: SemiAutoWorkbenchProps
             <div className="feedback-stack" aria-live="polite">
               {generateFeedback ? (
                 <p className={`feedback ${generateFeedback.kind}`}>{generateFeedback.message}</p>
-              ) : null}
-              {codeFeedback ? (
-                <p className={`feedback ${codeFeedback.kind}`}>{codeFeedback.message}</p>
               ) : null}
               {addFeedback ? (
                 <p className={`feedback ${addFeedback.kind}`}>{addFeedback.message}</p>
